@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Aspirant AI — NOVA Desktop Shell</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: "Inter", "Segoe UI", sans-serif;
+      background: #05070e;
+      color: #f8fafc;
+      display: grid;
+      place-items: center;
+      min-height: 100vh;
+    }
+    .card {
+      max-width: 680px;
+      width: 90%;
+      background: rgba(11, 16, 32, 0.9);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 20px;
+      padding: 28px;
+      box-shadow: 0 0 40px -12px rgba(14, 165, 233, 0.45);
+    }
+    .header { display: flex; align-items: center; gap: 16px; }
+    .header img { width: 56px; height: 56px; border-radius: 14px; }
+    h1 { margin: 0; font-size: 22px; }
+    .sub { color: #94a3b8; font-size: 13px; margin-top: 4px; }
+    .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-top: 20px; }
+    .tile {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 12px;
+      padding: 12px;
+      font-size: 13px;
+    }
+    .accent { color: #0ea5e9; font-weight: 600; }
+    button {
+      margin-top: 18px;
+      background: linear-gradient(135deg, #0ea5e9, #8b5cf6);
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      padding: 10px 16px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <main class="card">
+    <div class="header">
+      <img src="../assets/app-icon-512.png" alt="Aspirant AI" />
+      <div>
+        <h1>ASPIRANT AI — NOVA Desktop Shell</h1>
+        <div class="sub">Intelligence Beyond Assistance • Electron &amp; Tauri Compatible</div>
+      </div>
+    </div>
+    <div class="grid">
+      <div class="tile"><div class="accent">Global Hotkeys</div>Ctrl+Shift+N (Hey Nova)<br />Ctrl+Shift+M (MJ Capture)</div>
+      <div class="tile"><div class="accent">Background Services</div>System Tray • Clipboard Watcher • FastAPI Supervisor</div>
+    </div>
+    <button onclick="window.aspirantDesktop?.notify('NOVA Ready', 'Voice and automation channel standing by.')">
+      Test Desktop Notification Center
+    </button>
+  </main>
+</body>
+</html>

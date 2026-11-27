@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#070B18"/>
+      <stop offset="100%" stop-color="#0F172A"/>
+    </linearGradient>
+    <linearGradient id="primaryGrad" x1="10%" y1="90%" x2="90%" y2="10%">
+      <stop offset="0%" stop-color="#0EA5E9"/>
+      <stop offset="50%" stop-color="#3B82F6"/>
+      <stop offset="100%" stop-color="#8B5CF6"/>
+    </linearGradient>
+    <linearGradient id="coreGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FFFFFF"/>
+      <stop offset="55%" stop-color="#BAE6FD"/>
+      <stop offset="100%" stop-color="#DDD6FE"/>
+    </linearGradient>
+    <filter id="glow" x="-25%" y="-25%" width="150%" height="150%">
+      <feGaussianBlur stdDeviation="8" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+  <rect x="16" y="16" width="480" height="480" rx="112" fill="url(#bgGrad)"/>
+  <circle cx="256" cy="256" r="196" fill="none" stroke="url(#primaryGrad)" stroke-width="6" stroke-dasharray="280 44 120 44" opacity="0.88"/>
+  <circle cx="256" cy="256" r="172" fill="none" stroke="#FFFFFF" stroke-opacity="0.16" stroke-width="2"/>
+  <g filter="url(#glow)">
+    <path d="M256 76 L396 392 L342 392 L256 196 L170 392 L116 392 Z" fill="url(#primaryGrad)"/>
+    <path d="M188 312 L256 268 L324 312 L298 344 L256 318 L214 344 Z" fill="url(#coreGrad)"/>
+  </g>
+  <polygon points="256,124 270,152 298,166 270,180 256,208 242,180 214,166 242,152" fill="#FFFFFF"/>
+  <circle cx="96" cy="144" r="9" fill="#0EA5E9"/>
+  <circle cx="416" cy="368" r="9" fill="#8B5CF6"/>
+  <circle cx="404" cy="126" r="6" fill="#FFFFFF" opacity="0.85"/>
+</svg>

@@ -1,0 +1,3 @@
+name = "aspirant-edge-proxy"
+main = "worker-edge-proxy.ts"
+compatibility_date = "2025-10-01"

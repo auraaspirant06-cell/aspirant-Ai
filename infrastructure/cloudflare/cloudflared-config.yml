@@ -1,0 +1,9 @@
+tunnel: aspirant-ai-ecosystem
+credentials-file: /etc/cloudflared/credentials.json
+
+ingress:
+  - hostname: api.aspirant.ai
+    service: http://127.0.0.1:8000
+  - hostname: app.aspirant.ai
+    service: http://127.0.0.1:3000
+  - service: http_status:404

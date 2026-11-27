@@ -1,0 +1,24 @@
+{
+  "name": "aspirant-ai-desktop",
+  "version": "2.0.0",
+  "description": "NOVA Windows Desktop Shell (Electron + Tauri compatibility) for Aspirant AI",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "check": "node -c main.js && node -c preload.js"
+  },
+  "dependencies": {
+    "electron-updater": "^6.3.9"
+  },
+  "devDependencies": {
+    "electron": "^33.2.0"
+  },
+  "build": {
+    "appId": "ai.aspirant.nova",
+    "productName": "Aspirant AI NOVA",
+    "win": {
+      "icon": "../assets/app-icon.ico",
+      "target": ["nsis"]
+    }
+  }
+}

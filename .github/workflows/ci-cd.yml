@@ -1,0 +1,87 @@
+name: Aspirant AI Ecosystem CI/CD
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+
+jobs:
+  backend-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install backend dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r backend/requirements.txt pytest httpx
+      - name: Verify Alembic migration & ecosystem tests
+        env:
+          PYTHONPATH: .
+        run: pytest backend/tests/test_ecosystem_backend.py -v
+
+  frontend-build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Install, typecheck & build Next.js
+        working-directory: frontend
+        run: |
+          npm install
+          npx tsc --noEmit
+          npm run build
+
+  desktop-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Check Electron JS syntax
+        run: |
+          node -c desktop/electron/main.js
+          node -c desktop/electron/preload.js
+
+  mobile-flutter-analyze:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: "3.24.0"
+          channel: stable
+      - name: Flutter pub get, analyze & test
+        working-directory: mobile
+        run: |
+          flutter pub get
+          flutter analyze
+          flutter test
+
+  docker-publish:
+    needs: [backend-test, frontend-build, desktop-check]
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+    permissions:
+      packages: write
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Build and push Backend & Frontend images
+        run: |
+          docker build -f infrastructure/docker/backend.Dockerfile -t ghcr.io/${{ github.repository }}/backend:latest .
+          docker build -f infrastructure/docker/frontend.Dockerfile -t ghcr.io/${{ github.repository }}/frontend:latest .
+          docker push ghcr.io/${{ github.repository }}/backend:latest
+          docker push ghcr.io/${{ github.repository }}/frontend:latest

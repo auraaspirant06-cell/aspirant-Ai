@@ -1,0 +1,19 @@
+{
+  "brand": "ASPIRANT AI",
+  "tagline": "Intelligence Beyond Assistance",
+  "products": [
+    "NOVA",
+    "MJ",
+    "MAX"
+  ],
+  "colors": {
+    "deep_black": "#05070E",
+    "obsidian_surface": "#0B1021",
+    "electric_blue": "#0EA5E9",
+    "royal_blue": "#3B82F6",
+    "neon_purple": "#8B5CF6",
+    "deep_purple": "#6D28D9",
+    "white_accent": "#F8FAFC",
+    "muted_slate": "#94A3B8"
+  }
+}

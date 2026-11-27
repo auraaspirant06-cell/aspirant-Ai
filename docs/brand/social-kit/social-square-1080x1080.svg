@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 1080" width="1080" height="1080">
+  <defs>
+    <radialGradient id="orb1" cx="18%" cy="22%" r="55%">
+      <stop offset="0%" stop-color="#0EA5E9" stop-opacity="0.34"/>
+      <stop offset="100%" stop-color="#05070E" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="orb2" cx="85%" cy="80%" r="55%">
+      <stop offset="0%" stop-color="#8B5CF6" stop-opacity="0.34"/>
+      <stop offset="100%" stop-color="#05070E" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="gBrand" x1="0%" y1="100%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#0EA5E9"/>
+      <stop offset="100%" stop-color="#8B5CF6"/>
+    </linearGradient>
+  </defs>
+  <rect width="1080" height="1080" fill="#05070E"/>
+  <rect width="1080" height="1080" fill="url(#orb1)"/>
+  <rect width="1080" height="1080" fill="url(#orb2)"/>
+  <g opacity="0.12" stroke="#3B82F6" stroke-width="1">
+    <line x1="0" y1="270" x2="1080" y2="270"/>
+    <line x1="0" y1="810" x2="1080" y2="810"/>
+  </g>
+  <g transform="translate(-95, 240) scale(1.174)">
+    <circle cx="256" cy="256" r="196" fill="none" stroke="url(#gBrand)" stroke-width="10" stroke-dasharray="280 44 120 44"/>
+    <path d="M256 76 L396 392 L342 392 L256 196 L170 392 L116 392 Z" fill="url(#gBrand)"/>
+    <path d="M188 312 L256 268 L324 312 L298 344 L256 318 L214 344 Z" fill="#FFFFFF"/>
+    <polygon points="256,124 270,152 298,166 270,180 256,208 242,180 214,166 242,152" fill="#FFFFFF"/>
+  </g>
+  <text x="367" y="496" fill="#FFFFFF" font-family="Segoe UI, Inter, sans-serif" font-size="60" font-weight="800" letter-spacing="6">ASPIRANT AI</text>
+  <text x="367" y="626" fill="#BAE6FD" font-family="Segoe UI, Inter, sans-serif" font-size="22" font-weight="600" letter-spacing="4">INTELLIGENCE BEYOND ASSISTANCE</text>
+  <text x="367" y="745" fill="#94A3B8" font-family="Segoe UI, Inter, sans-serif" font-size="17" font-weight="600" letter-spacing="3">NOVA DESKTOP  •  MJ INTELLIGENCE  •  MAX MOBILE</text>
+</svg>

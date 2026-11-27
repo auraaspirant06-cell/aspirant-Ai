@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 320" width="1200" height="320">
+  <defs>
+    <linearGradient id="txtGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#FFFFFF"/>
+      <stop offset="65%" stop-color="#BAE6FD"/>
+      <stop offset="100%" stop-color="#C4B5FD"/>
+    </linearGradient>
+    <linearGradient id="markGrad" x1="0%" y1="100%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#0EA5E9"/>
+      <stop offset="100%" stop-color="#8B5CF6"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="320" rx="28" fill="#05070E"/>
+  <g transform="translate(54,32) scale(0.5)">
+    <circle cx="256" cy="256" r="196" fill="none" stroke="url(#markGrad)" stroke-width="10" stroke-dasharray="280 44 120 44"/>
+    <path d="M256 76 L396 392 L342 392 L256 196 L170 392 L116 392 Z" fill="url(#markGrad)"/>
+    <path d="M188 312 L256 268 L324 312 L298 344 L256 318 L214 344 Z" fill="#FFFFFF"/>
+    <polygon points="256,124 270,152 298,166 270,180 256,208 242,180 214,166 242,152" fill="#FFFFFF"/>
+  </g>
+  <text x="355" y="158" fill="url(#txtGrad)" font-family="Segoe UI, Inter, Arial, sans-serif" font-size="86" font-weight="800" letter-spacing="8">ASPIRANT AI</text>
+  <text x="360" y="218" fill="#94A3B8" font-family="Segoe UI, Inter, Arial, sans-serif" font-size="28" font-weight="600" letter-spacing="6">INTELLIGENCE BEYOND ASSISTANCE</text>
+  <rect x="360" y="242" width="110" height="28" rx="14" fill="#0EA5E9" fill-opacity="0.18" stroke="#0EA5E9"/>
+  <text x="415" y="261" text-anchor="middle" fill="#BAE6FD" font-family="Segoe UI, sans-serif" font-size="15" font-weight="700" letter-spacing="2">NOVA</text>
+  <rect x="486" y="242" width="90" height="28" rx="14" fill="#8B5CF6" fill-opacity="0.22" stroke="#8B5CF6"/>
+  <text x="531" y="261" text-anchor="middle" fill="#DDD6FE" font-family="Segoe UI, sans-serif" font-size="15" font-weight="700" letter-spacing="2">MJ</text>
+  <rect x="592" y="242" width="98" height="28" rx="14" fill="#3B82F6" fill-opacity="0.20" stroke="#3B82F6"/>
+  <text x="641" y="261" text-anchor="middle" fill="#DBEAFE" font-family="Segoe UI, sans-serif" font-size="15" font-weight="700" letter-spacing="2">MAX</text>
+</svg>
