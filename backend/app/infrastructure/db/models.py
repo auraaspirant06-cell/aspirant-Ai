@@ -134,3 +134,42 @@ class AuditLogModel(Base):
     ip_address: Mapped[str] = mapped_column(String(64), default="local", nullable=False)
     details_json: Mapped[dict] = mapped_column(JSON, default=dict, nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utc_now, index=True)
+
+
+class VoiceProfileModel(Base):
+    __tablename__ = "voice_profiles"
+
+    id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    user_id: Mapped[str] = mapped_column(
+        String(64), ForeignKey("users.id", ondelete="CASCADE"), unique=True, index=True
+    )
+    label: Mapped[str] = mapped_column(String(128), default="Owner Voice", nullable=False)
+    embedding_json: Mapped[list] = mapped_column(JSON, default=list, nullable=False)
+    voice_unlock_enabled: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    confidence_threshold: Mapped[float] = mapped_column(Float, default=0.85, nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utc_now, onupdate=_utc_now)
+
+
+class SocialConnectionModel(Base):
+    __tablename__ = "social_connections"
+
+    id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    user_id: Mapped[str] = mapped_column(String(64), ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    platform: Mapped[str] = mapped_column(String(32), index=True, nullable=False)
+    access_token_encrypted: Mapped[str] = mapped_column(Text, default="", nullable=False)
+    permissions_json: Mapped[list] = mapped_column(JSON, default=list, nullable=False)
+    is_enabled: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    metadata_json: Mapped[dict] = mapped_column(JSON, default=dict, nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utc_now, onupdate=_utc_now)
+
+
+class FeedbackEventModel(Base):
+    __tablename__ = "feedback_events"
+
+    id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    user_id: Mapped[str] = mapped_column(String(64), ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    objective: Mapped[str] = mapped_column(Text, nullable=False)
+    intent: Mapped[str] = mapped_column(String(64), default="general", nullable=False)
+    rating: Mapped[int] = mapped_column(Integer, default=5, nullable=False)
+    correction_note: Mapped[str] = mapped_column(Text, default="", nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utc_now, index=True)

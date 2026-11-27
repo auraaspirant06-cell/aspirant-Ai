@@ -1,0 +1,31 @@
+{
+  "properties": {
+    "platform": {
+      "title": "Platform",
+      "type": "string"
+    },
+    "access_token": {
+      "minLength": 4,
+      "title": "Access Token",
+      "type": "string"
+    },
+    "permissions": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Permissions",
+      "type": "array"
+    },
+    "metadata": {
+      "additionalProperties": true,
+      "title": "Metadata",
+      "type": "object"
+    }
+  },
+  "required": [
+    "platform",
+    "access_token"
+  ],
+  "title": "ConnectSocialRequest",
+  "type": "object"
+}

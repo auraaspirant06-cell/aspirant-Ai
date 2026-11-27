@@ -1,0 +1,30 @@
+{
+  "$defs": {
+    "ProductSource": {
+      "enum": [
+        "nova",
+        "mj",
+        "max",
+        "web"
+      ],
+      "title": "ProductSource",
+      "type": "string"
+    }
+  },
+  "properties": {
+    "objective": {
+      "minLength": 2,
+      "title": "Objective",
+      "type": "string"
+    },
+    "source_app": {
+      "$ref": "#/$defs/ProductSource",
+      "default": "mj"
+    }
+  },
+  "required": [
+    "objective"
+  ],
+  "title": "DeepReasonRequest",
+  "type": "object"
+}

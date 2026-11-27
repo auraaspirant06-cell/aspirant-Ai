@@ -1,0 +1,58 @@
+{
+  "$defs": {
+    "AgentRole": {
+      "enum": [
+        "research",
+        "automation",
+        "coding",
+        "content",
+        "productivity",
+        "planning",
+        "support"
+      ],
+      "title": "AgentRole",
+      "type": "string"
+    },
+    "ProductSource": {
+      "enum": [
+        "nova",
+        "mj",
+        "max",
+        "web"
+      ],
+      "title": "ProductSource",
+      "type": "string"
+    }
+  },
+  "properties": {
+    "objective": {
+      "minLength": 2,
+      "title": "Objective",
+      "type": "string"
+    },
+    "source_app": {
+      "$ref": "#/$defs/ProductSource",
+      "default": "nova"
+    },
+    "agents": {
+      "anyOf": [
+        {
+          "items": {
+            "$ref": "#/$defs/AgentRole"
+          },
+          "type": "array"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Agents"
+    }
+  },
+  "required": [
+    "objective"
+  ],
+  "title": "AgentExecuteRequest",
+  "type": "object"
+}

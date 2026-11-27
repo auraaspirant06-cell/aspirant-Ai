@@ -1,0 +1,40 @@
+{
+  "properties": {
+    "password": {
+      "minLength": 1,
+      "title": "Password",
+      "type": "string"
+    },
+    "label": {
+      "default": "Primary Owner",
+      "title": "Label",
+      "type": "string"
+    },
+    "samples": {
+      "items": {
+        "type": "number"
+      },
+      "minItems": 8,
+      "title": "Samples",
+      "type": "array"
+    },
+    "voice_unlock_enabled": {
+      "default": true,
+      "title": "Voice Unlock Enabled",
+      "type": "boolean"
+    },
+    "confidence_threshold": {
+      "default": 0.85,
+      "maximum": 0.99,
+      "minimum": 0.5,
+      "title": "Confidence Threshold",
+      "type": "number"
+    }
+  },
+  "required": [
+    "password",
+    "samples"
+  ],
+  "title": "VoiceEnrollRequest",
+  "type": "object"
+}

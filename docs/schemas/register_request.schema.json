@@ -1,0 +1,39 @@
+{
+  "properties": {
+    "email": {
+      "maxLength": 255,
+      "minLength": 5,
+      "title": "Email",
+      "type": "string"
+    },
+    "password": {
+      "maxLength": 128,
+      "minLength": 8,
+      "title": "Password",
+      "type": "string"
+    },
+    "full_name": {
+      "maxLength": 255,
+      "minLength": 1,
+      "title": "Full Name",
+      "type": "string"
+    },
+    "device_name": {
+      "default": "primary-desktop",
+      "title": "Device Name",
+      "type": "string"
+    },
+    "device_platform": {
+      "default": "windows",
+      "title": "Device Platform",
+      "type": "string"
+    }
+  },
+  "required": [
+    "email",
+    "password",
+    "full_name"
+  ],
+  "title": "RegisterRequest",
+  "type": "object"
+}

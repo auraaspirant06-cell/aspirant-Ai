@@ -19,6 +19,7 @@ ROOT = Path(__file__).resolve().parents[1]
 BRAND_DIR = ROOT / "docs" / "brand"
 ASSETS_DIR = BRAND_DIR / "assets"
 SOCIAL_DIR = BRAND_DIR / "social-kit"
+SPLASH_DIR = BRAND_DIR / "splash-screens"
 
 PALETTE = {
     "brand": "ASPIRANT AI",
@@ -156,6 +157,45 @@ def _social_svg(width: int, height: int, subtitle: str) -> str:
 </svg>"""
 
 
+def _splash_svg(width: int, height: int, mode_label: str) -> str:
+    is_portrait = height > width
+    cx = width // 2
+    cy = int(height * (0.42 if is_portrait else 0.44))
+    scale = (min(width, height) * 0.28) / 512.0
+    title_y = int(cy + 260 * scale + 70)
+    sub_y = title_y + (48 if is_portrait else 54)
+    title_size = 54 if is_portrait else 64
+    return f"""<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {width} {height}" width="{width}" height="{height}">
+  <defs>
+    <radialGradient id="spGlow" cx="50%" cy="42%" r="60%">
+      <stop offset="0%" stop-color="#0EA5E9" stop-opacity="0.28"/>
+      <stop offset="55%" stop-color="#8B5CF6" stop-opacity="0.14"/>
+      <stop offset="100%" stop-color="#05070E" stop-opacity="1"/>
+    </radialGradient>
+    <linearGradient id="spBrand" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#FFFFFF"/>
+      <stop offset="55%" stop-color="#BAE6FD"/>
+      <stop offset="100%" stop-color="#C4B5FD"/>
+    </linearGradient>
+    <linearGradient id="spA" x1="0%" y1="100%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#0EA5E9"/>
+      <stop offset="50%" stop-color="#3B82F6"/>
+      <stop offset="100%" stop-color="#8B5CF6"/>
+    </linearGradient>
+  </defs>
+  <rect width="{width}" height="{height}" fill="#05070E"/>
+  <rect width="{width}" height="{height}" fill="url(#spGlow)"/>
+  <g transform="translate({cx - 256*scale},{cy - 256*scale}) scale({scale})">
+    <circle cx="256" cy="256" r="210" fill="none" stroke="url(#spA)" stroke-width="8" stroke-dasharray="300 44 120 44"/>
+    <path d="M256 76 L396 392 L342 392 L256 196 L170 392 L116 392 Z" fill="url(#spA)"/>
+    <path d="M188 312 L256 268 L324 312 L298 344 L256 318 L214 344 Z" fill="#FFFFFF"/>
+    <polygon points="256,124 270,152 298,166 270,180 256,208 242,180 214,166 242,152" fill="#FFFFFF"/>
+  </g>
+  <text x="{cx}" y="{title_y}" text-anchor="middle" fill="url(#spBrand)" font-family="Segoe UI, Inter, sans-serif" font-size="{title_size}" font-weight="800" letter-spacing="8">ASPIRANT AI</text>
+  <text x="{cx}" y="{sub_y}" text-anchor="middle" fill="#94A3B8" font-family="Segoe UI, Inter, sans-serif" font-size="22" font-weight="600" letter-spacing="5">{mode_label} • INTELLIGENCE BEYOND ASSISTANCE</text>
+</svg>"""
+
+
 async def _render_svgs(jobs: list[tuple[Path, Path, int, int, bool]]) -> None:
     async with async_playwright() as p:
         browser = await p.chromium.launch(channel="msedge", headless=True)
@@ -173,7 +213,7 @@ async def _render_svgs(jobs: list[tuple[Path, Path, int, int, bool]]) -> None:
 
 
 def main() -> None:
-    for d in (BRAND_DIR, ASSETS_DIR, SOCIAL_DIR):
+    for d in (BRAND_DIR, ASSETS_DIR, SOCIAL_DIR, SPLASH_DIR):
         d.mkdir(parents=True, exist_ok=True)
 
     (ASSETS_DIR / "aspirant-mark.svg").write_text(
@@ -239,6 +279,15 @@ def main() -> None:
         svg_p.write_text(_social_svg(w, h, sub), encoding="utf-8")
         jobs.append((svg_p, SOCIAL_DIR / f"{name}.png", w, h, False))
 
+    splash_specs = [
+        ("splash-desktop-1920x1080", 1920, 1080, "NOVA WORKSTATION"),
+        ("splash-mobile-1080x1920", 1080, 1920, "MAX MOBILE COMPANION"),
+    ]
+    for name, w, h, label in splash_specs:
+        svg_p = SPLASH_DIR / f"{name}.svg"
+        svg_p.write_text(_splash_svg(w, h, label), encoding="utf-8")
+        jobs.append((svg_p, SPLASH_DIR / f"{name}.png", w, h, False))
+
     asyncio.run(_render_svgs(jobs))
 
     master_icon = Image.open(ASSETS_DIR / "app-icon-512.png").convert("RGBA")
@@ -276,8 +325,10 @@ def main() -> None:
     shutil.copy2(ASSETS_DIR / "max-mark.png", ROOT / "frontend" / "public" / "brand" / "max-mark.png")
     shutil.copy2(ASSETS_DIR / "app-icon.ico", ROOT / "desktop" / "assets" / "app-icon.ico")
     shutil.copy2(ASSETS_DIR / "app-icon-512.png", ROOT / "desktop" / "assets" / "app-icon.png")
+    shutil.copy2(SPLASH_DIR / "splash-desktop-1920x1080.png", ROOT / "desktop" / "assets" / "splash-desktop.png")
     shutil.copy2(ASSETS_DIR / "app-icon-512.png", ROOT / "mobile" / "assets" / "brand" / "app-icon.png")
     shutil.copy2(ASSETS_DIR / "max-mark.png", ROOT / "mobile" / "assets" / "brand" / "max-mark.png")
+    shutil.copy2(SPLASH_DIR / "splash-mobile-1080x1920.png", ROOT / "mobile" / "assets" / "brand" / "splash-mobile.png")
 
     (BRAND_DIR / "brand-tokens.json").write_text(json.dumps(PALETTE, indent=2), encoding="utf-8")
     (BRAND_DIR / "brand-kit.html").write_text(

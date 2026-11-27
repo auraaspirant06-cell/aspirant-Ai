@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import os
 import sys
 from logging.config import fileConfig
 from pathlib import Path
@@ -12,7 +13,7 @@ from sqlalchemy import pool
 from sqlalchemy.engine import Connection
 from sqlalchemy.ext.asyncio import async_engine_from_config
 
-# Ensure repository root is importable when Alembic runs from backend/
+# Ensure repository root is importable regardless of current working directory
 REPO_ROOT = Path(__file__).resolve().parents[2]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
@@ -28,11 +29,33 @@ if config.config_file_name is not None:
 target_metadata = Base.metadata
 
 
+def _ensure_sqlite_parent_dir(url: str) -> None:
+    if not url.startswith("sqlite"):
+        return
+    # Handle sqlite+aiosqlite:///relative/or/C:/abs/path.db cleanly
+    if ":////" in url:
+        raw_path = url.split(":////", 1)[1]
+    elif ":///" in url:
+        raw_path = url.split(":///", 1)[1]
+    else:
+        return
+    raw_path = raw_path.split("?", 1)[0]
+    if not raw_path or raw_path == ":memory:":
+        return
+    db_path = Path(raw_path)
+    if not db_path.is_absolute():
+        db_path = REPO_ROOT / db_path
+    db_path.parent.mkdir(parents=True, exist_ok=True)
+
+
 def get_url() -> str:
-    override = config.get_main_option("sqlalchemy.url")
+    env_url = os.environ.get("DATABASE_URL")
     settings_url = get_settings().database_url
-    url = settings_url or override
-    return DatabaseManager._normalize_async_url(url)
+    override = config.get_main_option("sqlalchemy.url")
+    raw = env_url or settings_url or override
+    normalized = DatabaseManager._normalize_async_url(raw)
+    _ensure_sqlite_parent_dir(normalized)
+    return normalized
 
 
 def run_migrations_offline() -> None:
@@ -48,7 +71,11 @@ def run_migrations_offline() -> None:
 
 
 def do_run_migrations(connection: Connection) -> None:
-    context.configure(connection=connection, target_metadata=target_metadata)
+    context.configure(
+        connection=connection,
+        target_metadata=target_metadata,
+        compare_type=True,
+    )
     with context.begin_transaction():
         context.run_migrations()
 

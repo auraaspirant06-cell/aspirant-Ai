@@ -1,0 +1,28 @@
+{
+  "properties": {
+    "platform": {
+      "title": "Platform",
+      "type": "string"
+    },
+    "permission": {
+      "default": "publish",
+      "title": "Permission",
+      "type": "string"
+    },
+    "payload": {
+      "additionalProperties": true,
+      "title": "Payload",
+      "type": "object"
+    },
+    "live_send": {
+      "default": false,
+      "title": "Live Send",
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "platform"
+  ],
+  "title": "DispatchSocialRequest",
+  "type": "object"
+}

@@ -1,17 +1,14 @@
 "use client";
 
 import React from "react";
+import Link from "next/link";
 import { ArrowUpRight } from "lucide-react";
 import { BrandMark } from "./BrandMark";
 import { GlassCard } from "./GlassCard";
-import type { WorkspaceTab } from "./Sidebar";
-
-interface ProductSuiteGridProps {
-  onNavigate: (tab: WorkspaceTab) => void;
-}
 
 const PRODUCTS: Array<{
   id: "nova" | "mj" | "max";
+  href: "/nova" | "/mj" | "/max";
   title: string;
   role: string;
   accent: string;
@@ -19,6 +16,7 @@ const PRODUCTS: Array<{
 }> = [
   {
     id: "nova",
+    href: "/nova",
     title: "NOVA",
     role: "Windows Desktop Autonomous Operator",
     accent: "text-sky-400 border-sky-500/30",
@@ -30,6 +28,7 @@ const PRODUCTS: Array<{
   },
   {
     id: "mj",
+    href: "/mj",
     title: "MJ",
     role: "Human-Like Deep Intelligence",
     accent: "text-violet-400 border-violet-500/30",
@@ -41,6 +40,7 @@ const PRODUCTS: Array<{
   },
   {
     id: "max",
+    href: "/max",
     title: "MAX",
     role: "Android-First Mobile Companion",
     accent: "text-indigo-400 border-indigo-500/30",
@@ -52,11 +52,11 @@ const PRODUCTS: Array<{
   },
 ];
 
-export function ProductSuiteGrid({ onNavigate }: ProductSuiteGridProps) {
+export function ProductSuiteGrid() {
   return (
     <div className="grid gap-4 md:grid-cols-3">
       {PRODUCTS.map((p, idx) => (
-        <GlassCard key={p.id} delay={idx * 0.06} className="flex flex-col justify-between">
+        <GlassCard key={p.id} delay={idx * 0.05} className="flex flex-col justify-between">
           <div>
             <div className="flex items-start justify-between gap-3">
               <div className="flex items-center gap-3">
@@ -66,14 +66,13 @@ export function ProductSuiteGrid({ onNavigate }: ProductSuiteGridProps) {
                   <p className="text-xs text-slate-400">{p.role}</p>
                 </div>
               </div>
-              <button
-                type="button"
-                onClick={() => onNavigate(p.id)}
+              <Link
+                href={p.href}
                 aria-label={`Open ${p.title} workspace`}
                 className={`rounded-lg border p-1.5 transition hover:scale-105 ${p.accent}`}
               >
                 <ArrowUpRight className="h-4 w-4" />
-              </button>
+              </Link>
             </div>
             <ul className="mt-4 space-y-2 text-xs text-slate-500 dark:text-slate-300">
               {p.bullets.map((b) => (
@@ -84,13 +83,12 @@ export function ProductSuiteGrid({ onNavigate }: ProductSuiteGridProps) {
               ))}
             </ul>
           </div>
-          <button
-            type="button"
-            onClick={() => onNavigate(p.id)}
-            className="mt-5 w-full rounded-xl border border-white/10 bg-white/5 py-2 text-xs font-semibold transition hover:border-sky-500/50 hover:text-sky-400"
+          <Link
+            href={p.href}
+            className="mt-5 block w-full rounded-xl border border-white/10 bg-white/5 py-2 text-center text-xs font-semibold transition hover:border-sky-500/50 hover:text-sky-400"
           >
             Launch {p.title} Console
-          </button>
+          </Link>
         </GlassCard>
       ))}
     </div>

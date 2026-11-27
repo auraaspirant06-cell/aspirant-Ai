@@ -53,21 +53,27 @@ def _register_and_headers(client: TestClient, email: str = "founder@aspirant.ai"
 
 
 def test_alembic_initial_migration_applies_cleanly(tmp_path: Path, monkeypatch) -> None:
-    db_path = tmp_path / "alembic_test.db"
+    db_path = tmp_path / "nested" / "alembic_test.db"
     monkeypatch.setenv("DATABASE_URL", f"sqlite+aiosqlite:///{db_path.as_posix()}")
     from backend.app.core.config import get_settings
 
     get_settings.cache_clear()
-    cfg = Config(str(Path(__file__).resolve().parents[1] / "alembic.ini"))
-    cfg.set_main_option("script_location", str(Path(__file__).resolve().parents[1] / "migrations"))
+    backend_ini = Path(__file__).resolve().parents[1] / "alembic.ini"
+    root_ini = Path(__file__).resolve().parents[2] / "alembic.ini"
+
+    # Must work directly from Config without overriding script_location
+    cfg = Config(str(backend_ini))
     command.upgrade(cfg, "head")
+    command.check(cfg)
 
     with sqlite3.connect(db_path) as conn:
         tables = {
             row[0]
             for row in conn.execute("SELECT name FROM sqlite_master WHERE type='table'").fetchall()
         }
-    get_settings.cache_clear()
+        rev = conn.execute("SELECT version_num FROM alembic_version").fetchone()
+
+    assert rev == ("0002_voice_integrations_reasoning",)
     expected = {
         "users",
         "refresh_sessions",
@@ -78,8 +84,18 @@ def test_alembic_initial_migration_applies_cleanly(tmp_path: Path, monkeypatch) 
         "notes",
         "agent_runs",
         "audit_logs",
+        "voice_profiles",
+        "social_connections",
+        "feedback_events",
     }
     assert expected.issubset(tables)
+
+    # Root alembic.ini must point to the exact same state
+    root_cfg = Config(str(root_ini))
+    command.check(root_cfg)
+    command.downgrade(cfg, "base")
+    command.upgrade(cfg, "head")
+    get_settings.cache_clear()
 
 
 def test_auth_refresh_rotation_security_headers_and_audit(tmp_path: Path) -> None:
@@ -328,3 +344,158 @@ def test_seven_collaborative_agents_and_nova_mj_max_products(tmp_path: Path) -> 
             json={"title": "MAX Alert", "body": "Habit streak preserved!"},
         )
         assert push.status_code == 200 and push.json()["status"] == "dispatched"
+
+
+def test_multilingual_voice_commands_and_speaker_identity(tmp_path: Path) -> None:
+    app = create_app(_make_settings(tmp_path))
+    with TestClient(app) as client:
+        _, headers = _register_and_headers(client, email="voice@aspirant.ai")
+
+        langs = client.get("/api/v1/voice/languages").json()["languages"]
+        assert len(langs) == 13
+
+        samples_by_lang = {
+            "hi": "मेरा आज का प्लान खोलो",
+            "en": "Open browser and check notes",
+            "bn": "আমাকে বাংলায় সাহায্য করুন",
+            "ta": "தமிழில் விளக்கவும்",
+            "te": "తెలుగులో వివరించండి",
+            "mr": "तुम्ही कसे आहात मला मराठीत सांगा",
+            "gu": "મને ગુજરાતીમાં સમજાવો",
+            "pa": "ਮੈਨੂੰ ਪੰਜਾਬੀ ਵਿੱਚ ਦੱਸੋ",
+            "kn": "ಕನ್ನಡದಲ್ಲಿ ವಿವರಿಸಿ",
+            "ml": "മലയാളത്തിൽ വിശദീകരിക്കൂ",
+            "ur": "اردو میں سمجھائیں",
+            "or": "ମୋତେ ଓଡ଼ିଆରେ ବୁଝାନ୍ତୁ",
+            "as": "মই অসমীয়াত সহায় বিচাৰিছোঁ",
+        }
+        for code, text in samples_by_lang.items():
+            res = client.post(
+                "/api/v1/voice/process",
+                headers=headers,
+                json={"transcript": text, "far_field": True, "noise_db": -44.0},
+            )
+            assert res.status_code == 200
+            data = res.json()
+            assert data["language"] == code
+            assert data["confidence"] > 0.4
+
+        # Speaker enrollment rejects invalid password fallback
+        bad_enroll = client.post(
+            "/api/v1/voice/identity/enroll",
+            headers=headers,
+            json={
+                "password": "WrongPassword!",
+                "label": "Owner",
+                "samples": [0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2] * 4,
+                "voice_unlock_enabled": True,
+            },
+        )
+        assert bad_enroll.status_code == 403
+
+        owner_samples = [0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2] * 4
+        ok_enroll = client.post(
+            "/api/v1/voice/identity/enroll",
+            headers=headers,
+            json={
+                "password": "StrongPassword!2026",
+                "label": "Owner",
+                "samples": owner_samples,
+                "voice_unlock_enabled": True,
+                "confidence_threshold": 0.9,
+            },
+        )
+        assert ok_enroll.status_code == 200
+
+        verified = client.post(
+            "/api/v1/voice/identity/verify",
+            headers=headers,
+            json={"samples": owner_samples},
+        )
+        assert verified.json()["verified"] is True and verified.json()["access_level"] == "trusted"
+
+        # Unrecognized voice restricts access & blocks sensitive delete command
+        impostor_samples = [-0.1, 0.95, -0.85, 0.1, -0.9, 0.85, -0.2, 0.7] * 4
+        blocked_voice = client.post(
+            "/api/v1/voice/process",
+            headers=headers,
+            json={
+                "transcript": "Delete project workspace files",
+                "voice_samples": impostor_samples,
+                "explicit_authorization": True,
+            },
+        )
+        assert blocked_voice.status_code == 200
+        assert blocked_voice.json()["access_level"] == "restricted"
+        assert blocked_voice.json()["authorized"] is False
+
+
+def test_reasoning_self_reflection_social_connectors_and_self_healing(tmp_path: Path) -> None:
+    app = create_app(_make_settings(tmp_path))
+    with TestClient(app) as client:
+        _, headers = _register_and_headers(client, email="intel@aspirant.ai")
+
+        # Cross-session feedback learning + deep reasoning
+        fb = client.post(
+            "/api/v1/agents/feedback",
+            headers=headers,
+            json={
+                "objective": "Design FastAPI deployment",
+                "intent": "code_engineering",
+                "rating": 2,
+                "correction_note": "Always include Alembic migration step before Uvicorn startup",
+            },
+        )
+        assert fb.status_code == 200 and fb.json()["learned_across_sessions"] is True
+
+        reasoned = client.post(
+            "/api/v1/agents/reason",
+            headers=headers,
+            json={"objective": "Plan Python FastAPI API release roadmap"},
+        )
+        assert reasoned.status_code == 200
+        rdata = reasoned.json()
+        assert rdata["reflection"]["passed"] is True
+        assert any("Alembic" in lesson for lesson in rdata["prior_lessons_used"])
+
+        # Social platform connectors (encrypted tokens, permission check, webhooks)
+        secret_bot_token = "1234567890:SECRET_TELEGRAM_TOKEN_VALUE"
+        conn = client.post(
+            "/api/v1/integrations/connect",
+            headers=headers,
+            json={
+                "platform": "telegram",
+                "access_token": secret_bot_token,
+                "permissions": ["read", "webhook"],
+            },
+        )
+        assert conn.status_code == 200
+
+        with sqlite3.connect(tmp_path / "ecosystem_test.db") as db:
+            enc_rows = db.execute("SELECT access_token_encrypted FROM social_connections").fetchall()
+        assert enc_rows and secret_bot_token not in enc_rows[0][0]
+
+        denied_pub = client.post(
+            "/api/v1/integrations/dispatch",
+            headers=headers,
+            json={"platform": "telegram", "permission": "publish", "payload": {"text": "hi"}},
+        )
+        assert denied_pub.status_code == 403
+
+        webhook = client.post(
+            "/api/v1/integrations/event",
+            headers=headers,
+            json={"platform": "telegram", "event": {"message": {"text": "Hey Nova!", "from": {"username": "harsh"}}}},
+        )
+        assert webhook.status_code == 200 and webhook.json()["sender"] == "harsh"
+
+        # Self-healing repository audit + API contract check
+        heal = client.get("/api/v1/self-healing/audit", headers=headers)
+        assert heal.status_code == 200
+        hdata = heal.json()
+        assert hdata["overall_status"] in {"healthy", "repaired"}
+        by_name = {c["name"]: c["status"] for c in hdata["checks"]}
+        assert by_name["dependencies"] == "ok"
+        assert by_name["alembic_paths"] == "ok"
+        assert by_name["ui_routes"] == "ok"
+        assert by_name["api_contracts"] == "ok"

@@ -101,6 +101,19 @@ services:
     ports:
       - "3000:3000"
 
+  gateway:
+    build:
+      context: ..
+      dockerfile: infrastructure/docker/gateway.Dockerfile
+    restart: unless-stopped
+    depends_on:
+      - backend
+    environment:
+      UPSTREAM_API_URL: http://backend:8000
+      GATEWAY_ADDR: ":8080"
+    ports:
+      - "8080:8080"
+
 volumes:
   postgres_data:
   redis_data:

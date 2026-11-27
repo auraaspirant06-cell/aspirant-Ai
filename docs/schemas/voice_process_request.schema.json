@@ -1,0 +1,59 @@
+{
+  "properties": {
+    "transcript": {
+      "minLength": 1,
+      "title": "Transcript",
+      "type": "string"
+    },
+    "always_listening": {
+      "default": true,
+      "title": "Always Listening",
+      "type": "boolean"
+    },
+    "signal_db": {
+      "default": -18.0,
+      "title": "Signal Db",
+      "type": "number"
+    },
+    "noise_db": {
+      "default": -42.0,
+      "title": "Noise Db",
+      "type": "number"
+    },
+    "far_field": {
+      "default": false,
+      "title": "Far Field",
+      "type": "boolean"
+    },
+    "barge_in": {
+      "default": false,
+      "title": "Barge In",
+      "type": "boolean"
+    },
+    "explicit_authorization": {
+      "default": false,
+      "title": "Explicit Authorization",
+      "type": "boolean"
+    },
+    "voice_samples": {
+      "anyOf": [
+        {
+          "items": {
+            "type": "number"
+          },
+          "type": "array"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Voice Samples"
+    }
+  },
+  "required": [
+    "transcript"
+  ],
+  "title": "VoiceProcessRequest",
+  "type": "object"
+}

@@ -1,0 +1,31 @@
+{
+  "properties": {
+    "objective": {
+      "minLength": 2,
+      "title": "Objective",
+      "type": "string"
+    },
+    "intent": {
+      "default": "general",
+      "title": "Intent",
+      "type": "string"
+    },
+    "rating": {
+      "default": 5,
+      "maximum": 5,
+      "minimum": 1,
+      "title": "Rating",
+      "type": "integer"
+    },
+    "correction_note": {
+      "default": "",
+      "title": "Correction Note",
+      "type": "string"
+    }
+  },
+  "required": [
+    "objective"
+  ],
+  "title": "FeedbackRequest",
+  "type": "object"
+}

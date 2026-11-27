@@ -1,0 +1,69 @@
+{
+  "$defs": {
+    "MemoryLayer": {
+      "enum": [
+        "short_term",
+        "long_term",
+        "preference",
+        "knowledge",
+        "conversation"
+      ],
+      "title": "MemoryLayer",
+      "type": "string"
+    },
+    "ProductSource": {
+      "enum": [
+        "nova",
+        "mj",
+        "max",
+        "web"
+      ],
+      "title": "ProductSource",
+      "type": "string"
+    }
+  },
+  "properties": {
+    "content": {
+      "minLength": 1,
+      "title": "Content",
+      "type": "string"
+    },
+    "layer": {
+      "$ref": "#/$defs/MemoryLayer",
+      "default": "long_term"
+    },
+    "source_app": {
+      "$ref": "#/$defs/ProductSource",
+      "default": "mj"
+    },
+    "summary": {
+      "default": "",
+      "title": "Summary",
+      "type": "string"
+    },
+    "tags": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Tags",
+      "type": "array"
+    },
+    "importance": {
+      "default": 0.7,
+      "maximum": 1.0,
+      "minimum": 0.0,
+      "title": "Importance",
+      "type": "number"
+    },
+    "metadata": {
+      "additionalProperties": true,
+      "title": "Metadata",
+      "type": "object"
+    }
+  },
+  "required": [
+    "content"
+  ],
+  "title": "RememberRequest",
+  "type": "object"
+}

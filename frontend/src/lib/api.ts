@@ -21,6 +21,23 @@ export interface AgentRunResponse {
   status: string;
 }
 
+export interface VoicePipelineResponse {
+  language: string;
+  language_name: string;
+  detected_intent: string;
+  requires_authorization: boolean;
+  confidence: number;
+  speaker_verified: boolean;
+  access_level: string;
+  reply_text: string;
+}
+
+export interface SelfHealReport {
+  overall_status: string;
+  checks: Array<{ name: string; status: string; detail: string; repairable: boolean }>;
+  repaired: string[];
+}
+
 async function requestJson<T>(
   path: string,
   options: RequestInit = {},
@@ -45,7 +62,13 @@ async function requestJson<T>(
 }
 
 export const ecosystemApi = {
-  health: () => requestJson<{ status: string; vector_backend: string; cache_mode: string; products: string[] }>("/health"),
+  health: () =>
+    requestJson<{
+      status: string;
+      vector_backend: string;
+      cache_mode: string;
+      products: string[];
+    }>("/health"),
   register: (body: { email: string; password: string; full_name: string }) =>
     requestJson<AuthTokens>("/auth/register", {
       method: "POST",
@@ -56,17 +79,26 @@ export const ecosystemApi = {
       method: "POST",
       body: JSON.stringify(body),
     }),
-  executeAgents: (token: string, body: { objective: string; source_app: string; agents?: string[] }) =>
-    requestJson<AgentRunResponse>("/agents/execute", {
-      method: "POST",
-      body: JSON.stringify(body),
-    }, token),
-  novaVoice: (token: string, transcript: string) =>
-    requestJson<{ run_id: string; response_text: string; selected_agents: string[] }>(
-      "/nova/voice/command",
-      { method: "POST", body: JSON.stringify({ transcript }) },
+  executeAgents: (
+    token: string,
+    body: { objective: string; source_app: string; agents?: string[] }
+  ) =>
+    requestJson<AgentRunResponse>(
+      "/agents/execute",
+      { method: "POST", body: JSON.stringify(body) },
       token
     ),
+  reasonDeep: (
+    token: string,
+    body: { objective: string; source_app?: string }
+  ) =>
+    requestJson<{
+      intent: string;
+      confidence: number;
+      plan: string[];
+      reflection: { passed: boolean; adjustments: string[] };
+      final_answer: string;
+    }>("/agents/reason", { method: "POST", body: JSON.stringify(body) }, token),
   novaClipboard: (token: string, content: string) =>
     requestJson<{ kind: string; suggested_actions: string[]; preview: string }>(
       "/nova/clipboard/analyze",
@@ -74,33 +106,51 @@ export const ecosystemApi = {
       token
     ),
   mjChat: (token: string, message: string) =>
-    requestJson<{ reply: string; provider: string; model: string; recalled_count: number }>(
-      "/mj/chat",
-      { method: "POST", body: JSON.stringify({ message }) },
-      token
-    ),
-  mjResearchPlan: (token: string, topic: string) =>
-    requestJson<{ run_id: string; goal_id: string; synthesis: string }>(
-      "/mj/research/plan",
-      { method: "POST", body: JSON.stringify({ topic, create_goal: true }) },
-      token
-    ),
+    requestJson<{
+      reply: string;
+      provider: string;
+      model: string;
+      recalled_count: number;
+    }>("/mj/chat", { method: "POST", body: JSON.stringify({ message }) }, token),
   maxDailyPlan: (token: string) =>
-    requestJson<{ date: string; focus_goals: Array<{ id: string; title: string; progress: number }>; habits: Array<{ id: string; title: string; streak: number }>; due_reminders: Array<{ id: string; title: string; due_at: string }> }>(
-      "/max/daily-plan",
-      { method: "GET" },
-      token
-    ),
+    requestJson<{
+      date: string;
+      focus_goals: Array<{ id: string; title: string; progress: number }>;
+      habits: Array<{ id: string; title: string; streak: number }>;
+      due_reminders: Array<{ id: string; title: string; due_at: string }>;
+    }>("/max/daily-plan", { method: "GET" }, token),
   searchMemory: (token: string, q: string) =>
-    requestJson<{ query: string; results: Array<{ id: string; content: string; layer: string; score: number }> }>(
-      `/memory/search?q=${encodeURIComponent(q)}`,
-      { method: "GET" },
+    requestJson<{
+      query: string;
+      results: Array<{ id: string; content: string; layer: string; score: number }>;
+    }>(`/memory/search?q=${encodeURIComponent(q)}`, { method: "GET" }, token),
+  voiceProcess: (
+    token: string,
+    body: {
+      transcript: string;
+      always_listening?: boolean;
+      noise_db?: number;
+      voice_samples?: number[];
+    }
+  ) =>
+    requestJson<VoicePipelineResponse>(
+      "/voice/process",
+      { method: "POST", body: JSON.stringify(body) },
       token
     ),
-  storeMemory: (token: string, content: string, layer: string = "long_term") =>
-    requestJson<{ id: string; summary: string }>(
-      "/memory",
-      { method: "POST", body: JSON.stringify({ content, layer, source_app: "web" }) },
+  integrationsCatalog: (token: string) =>
+    requestJson<{
+      connectors: Array<{
+        platform: string;
+        display_name: string;
+        connected: boolean;
+        permissions: string[];
+      }>;
+    }>("/integrations/catalog", { method: "GET" }, token),
+  selfHealAudit: (token: string, repair = false) =>
+    requestJson<SelfHealReport>(
+      repair ? "/self-healing/repair" : "/self-healing/audit",
+      { method: repair ? "POST" : "GET" },
       token
     ),
 };

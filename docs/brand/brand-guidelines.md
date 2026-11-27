@@ -33,10 +33,13 @@ All master assets are generated from vector SVG templates via `scripts/generate_
 - **Product Sub-Marks:** `assets/nova-mark.png`, `assets/mj-mark.png`, `assets/max-mark.png`
 - **Social Media Kit:**
   - OpenGraph / GitHub Preview: `social-kit/og-banner-1200x630.png`
-  - Twitter / X Header: `social-kit/twitter-header-1500x500.png`
-  - LinkedIn Cover: `social-kit/linkedin-cover-1584x396.png`
-  - Square Social Avatar: `social-kit/avatar-1080x1080.png`
+  - Twitter / X Header: `social-kit/x-header-1500x500.png`
+  - LinkedIn Cover: `social-kit/linkedin-banner-1584x396.png`
+  - Square Social Avatar: `social-kit/social-square-1080x1080.png`
   - YouTube / Hero Backdrop: `social-kit/youtube-banner-2560x1440.png`
+- **Splash Screens:**
+  - Desktop Splash (`1920x1080`): `splash-screens/splash-desktop-1920x1080.png` (also copied to `desktop/assets/splash-desktop.png`)
+  - Mobile Splash (`1080x1920`): `splash-screens/splash-mobile-1080x1920.png` (also copied to `mobile/assets/brand/splash-mobile.png`)
 
 ## 4. Clear Space & Contrast Rules
 - Maintain at least `0.25x` mark width clear space around the Aspirant "A" orbital emblem.

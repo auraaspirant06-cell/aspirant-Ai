@@ -23,7 +23,7 @@ def upgrade() -> None:
     op.create_table(
         "users",
         sa.Column("id", sa.String(64), primary_key=True),
-        sa.Column("email", sa.String(255), nullable=False, unique=True),
+        sa.Column("email", sa.String(255), nullable=False),
         sa.Column("full_name", sa.String(255), nullable=False),
         sa.Column("password_hash", sa.String(255), nullable=False),
         sa.Column("role", sa.String(32), nullable=False, server_default="owner"),
@@ -63,6 +63,7 @@ def upgrade() -> None:
     )
     op.create_index("ix_memories_user_id", "memories", ["user_id"])
     op.create_index("ix_memories_layer", "memories", ["layer"])
+    op.create_index("ix_memories_created_at", "memories", ["created_at"])
 
     op.create_table(
         "goals",
@@ -143,6 +144,7 @@ def upgrade() -> None:
     )
     op.create_index("ix_audit_logs_user_id", "audit_logs", ["user_id"])
     op.create_index("ix_audit_logs_action", "audit_logs", ["action"])
+    op.create_index("ix_audit_logs_created_at", "audit_logs", ["created_at"])
 
 
 def downgrade() -> None:

@@ -6,6 +6,7 @@ from fastapi import APIRouter, Depends
 from pydantic import BaseModel, Field
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from backend.app.ai.reasoning import DeepReasoningEngine
 from backend.app.api.deps import AuthenticatedPrincipal, get_container, get_current_user, get_db_session
 from backend.app.core.container import EcosystemContainer
 from backend.app.domain.entities import AgentRole, ProductSource
@@ -18,6 +19,18 @@ class AgentExecuteRequest(BaseModel):
     objective: str = Field(min_length=2)
     source_app: ProductSource = ProductSource.NOVA
     agents: list[AgentRole] | None = None
+
+
+class DeepReasonRequest(BaseModel):
+    objective: str = Field(min_length=2)
+    source_app: ProductSource = ProductSource.MJ
+
+
+class FeedbackRequest(BaseModel):
+    objective: str = Field(min_length=2)
+    intent: str = "general"
+    rating: int = Field(default=5, ge=1, le=5)
+    correction_note: str = ""
 
 
 @router.get("/catalog")
@@ -76,4 +89,59 @@ async def list_agent_runs(
             }
             for r in runs
         ]
+    }
+
+
+@router.post("/reason")
+async def deep_reason(
+    body: DeepReasonRequest,
+    principal: AuthenticatedPrincipal = Depends(get_current_user),
+    container: EcosystemContainer = Depends(get_container),
+    session: AsyncSession = Depends(get_db_session),
+) -> dict:
+    engine = DeepReasoningEngine(
+        router=container.ai_router,
+        memory=container.build_memory_service(session),
+        session=session,
+    )
+    trace = await engine.reason(
+        user_id=principal.user.id,
+        objective=body.objective,
+        source_app=body.source_app,
+    )
+    return {
+        "intent": trace.intent,
+        "confidence": trace.confidence,
+        "plan": trace.plan,
+        "chain_of_thought": trace.chain_of_thought,
+        "prior_lessons_used": trace.prior_lessons_used,
+        "reflection": trace.reflection,
+        "final_answer": trace.final_answer,
+    }
+
+
+@router.post("/feedback")
+async def submit_feedback(
+    body: FeedbackRequest,
+    principal: AuthenticatedPrincipal = Depends(get_current_user),
+    container: EcosystemContainer = Depends(get_container),
+    session: AsyncSession = Depends(get_db_session),
+) -> dict:
+    engine = DeepReasoningEngine(
+        router=container.ai_router,
+        memory=container.build_memory_service(session),
+        session=session,
+    )
+    row = await engine.record_feedback(
+        user_id=principal.user.id,
+        objective=body.objective,
+        intent=body.intent,
+        rating=body.rating,
+        correction_note=body.correction_note,
+    )
+    return {
+        "feedback_id": row.id,
+        "intent": row.intent,
+        "rating": row.rating,
+        "learned_across_sessions": bool(row.correction_note),
     }

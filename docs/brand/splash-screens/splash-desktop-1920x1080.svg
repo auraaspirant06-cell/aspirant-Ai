@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1920 1080" width="1920" height="1080">
+  <defs>
+    <radialGradient id="spGlow" cx="50%" cy="42%" r="60%">
+      <stop offset="0%" stop-color="#0EA5E9" stop-opacity="0.28"/>
+      <stop offset="55%" stop-color="#8B5CF6" stop-opacity="0.14"/>
+      <stop offset="100%" stop-color="#05070E" stop-opacity="1"/>
+    </radialGradient>
+    <linearGradient id="spBrand" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#FFFFFF"/>
+      <stop offset="55%" stop-color="#BAE6FD"/>
+      <stop offset="100%" stop-color="#C4B5FD"/>
+    </linearGradient>
+    <linearGradient id="spA" x1="0%" y1="100%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#0EA5E9"/>
+      <stop offset="50%" stop-color="#3B82F6"/>
+      <stop offset="100%" stop-color="#8B5CF6"/>
+    </linearGradient>
+  </defs>
+  <rect width="1920" height="1080" fill="#05070E"/>
+  <rect width="1920" height="1080" fill="url(#spGlow)"/>
+  <g transform="translate(808.8,323.79999999999995) scale(0.5906250000000001)">
+    <circle cx="256" cy="256" r="210" fill="none" stroke="url(#spA)" stroke-width="8" stroke-dasharray="300 44 120 44"/>
+    <path d="M256 76 L396 392 L342 392 L256 196 L170 392 L116 392 Z" fill="url(#spA)"/>
+    <path d="M188 312 L256 268 L324 312 L298 344 L256 318 L214 344 Z" fill="#FFFFFF"/>
+    <polygon points="256,124 270,152 298,166 270,180 256,208 242,180 214,166 242,152" fill="#FFFFFF"/>
+  </g>
+  <text x="960" y="698" text-anchor="middle" fill="url(#spBrand)" font-family="Segoe UI, Inter, sans-serif" font-size="64" font-weight="800" letter-spacing="8">ASPIRANT AI</text>
+  <text x="960" y="752" text-anchor="middle" fill="#94A3B8" font-family="Segoe UI, Inter, sans-serif" font-size="22" font-weight="600" letter-spacing="5">NOVA WORKSTATION • INTELLIGENCE BEYOND ASSISTANCE</text>
+</svg>
