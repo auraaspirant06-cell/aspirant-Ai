@@ -18,7 +18,7 @@ export default function AgentsPage() {
     Array<{ order: number; agent: string; output: string }>
   >([]);
   const [reflectionSummary, setReflectionSummary] = useState(
-    "Long-chain reasoning, self-reflection, and feedback adaptation ready."
+    "Long-chain reasoning, self-reflection, and cross-session feedback learning ready."
   );
 
   return (
@@ -51,7 +51,7 @@ export default function AgentsPage() {
           />
           <GlassCard>
             <h2 className="mb-2 text-lg font-bold">Multi-Agent Reasoning &amp; Self-Reflection</h2>
-            <p className="mb-4 rounded-xl border border-white/10 bg-black/20 p-3 text-xs text-violet-300">
+            <p className="surface-card mb-4 rounded-xl p-3 text-xs text-violet-700 dark:text-violet-300">
               {reflectionSummary}
             </p>
             <AgentPipelineView selectedAgents={selectedAgents} planSteps={planSteps} />

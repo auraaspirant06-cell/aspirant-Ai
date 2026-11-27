@@ -29,7 +29,7 @@ def build_stylesheet() -> str:
     QMainWindow, QWidget#RootWindow {{
         background-color: {PALETTE['bg_canvas']};
         color: {PALETTE['text_primary']};
-        font-family: "Segoe UI Variable", "Segoe UI", sans-serif;
+        font-family: "Segoe UI", "Arial", sans-serif;
         font-size: 13px;
     }}
 
@@ -189,12 +189,52 @@ def build_stylesheet() -> str:
         spacing: 8px;
     }}
 
-    QComboBox, QLineEdit {{
-        background-color: rgba(15, 23, 42, 0.85);
+    QComboBox, QLineEdit, QTextEdit, QPlainTextEdit, QSpinBox, QDoubleSpinBox {{
+        background-color: rgba(15, 23, 42, 0.92);
         color: {PALETTE['text_primary']};
         border: 1px solid {PALETTE['border_subtle']};
         border-radius: 8px;
         padding: 6px 10px;
+        min-height: 20px;
+    }}
+
+    QComboBox:focus, QLineEdit:focus, QTextEdit:focus, QPlainTextEdit:focus {{
+        border: 1px solid {PALETTE['neon_cyan']};
+    }}
+
+    QComboBox::drop-down {{
+        subcontrol-origin: padding;
+        subcontrol-position: top right;
+        width: 24px;
+        border-left: 1px solid {PALETTE['border_subtle']};
+    }}
+
+    QComboBox QAbstractItemView {{
+        background-color: #0F172A;
+        color: #F8FAFC;
+        border: 1px solid {PALETTE['border_glass']};
+        selection-background-color: {PALETTE['purple']};
+        selection-color: #FFFFFF;
+        outline: 0px;
+        padding: 4px;
+    }}
+
+    QMenu {{
+        background-color: #0B1020;
+        color: #F8FAFC;
+        border: 1px solid {PALETTE['border_glass']};
+        border-radius: 8px;
+        padding: 4px;
+    }}
+
+    QMenu::item {{
+        padding: 6px 16px;
+        border-radius: 5px;
+    }}
+
+    QMenu::item:selected {{
+        background-color: {PALETTE['purple']};
+        color: #FFFFFF;
     }}
 
     QTableWidget {{
@@ -215,9 +255,11 @@ def build_stylesheet() -> str:
         font-weight: 600;
     }}
 
-    QScrollArea {{
+    QScrollArea,
+    QScrollArea > QWidget,
+    QScrollArea > QWidget > QWidget {{
         border: none;
-        background: transparent;
+        background-color: transparent;
     }}
 
     QScrollBar:vertical {{

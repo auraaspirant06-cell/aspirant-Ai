@@ -50,11 +50,11 @@ export function Sidebar({ activeTab }: SidebarProps) {
       className="glass-panel flex flex-col justify-between rounded-2xl p-4 lg:w-64 lg:shrink-0"
     >
       <div>
-        <Link href="/" className="flex items-center gap-3 px-2 pb-5 pt-1 focus:outline-none">
+        <Link href="/" className="flex items-center gap-3 px-2 pb-5 pt-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500 rounded-xl">
           <BrandMark product="aspirant" size={40} />
           <div>
             <p className="text-sm font-bold tracking-widest gradient-text">ASPIRANT AI</p>
-            <p className="text-[11px] text-slate-400">Intelligence Beyond Assistance</p>
+            <p className="text-[11px] text-adaptive-muted">Intelligence Beyond Assistance</p>
           </div>
         </Link>
 
@@ -68,10 +68,10 @@ export function Sidebar({ activeTab }: SidebarProps) {
                 href={item.href}
                 data-route-id={item.id}
                 aria-current={active ? "page" : undefined}
-                className={`flex items-center gap-3 rounded-xl px-3 py-2 text-left transition-all focus:outline-none focus:ring-2 focus:ring-sky-500 ${
+                className={`flex min-h-[42px] items-center gap-3 rounded-xl px-3 py-2 text-left transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500 ${
                   active
                     ? "bg-aspirant-gradient text-white shadow-glow"
-                    : "text-slate-600 hover:bg-slate-200/60 dark:text-slate-300 dark:hover:bg-white/5"
+                    : "text-adaptive-body hover:bg-sky-500/10"
                 }`}
               >
                 <Icon className="h-4 w-4 shrink-0" />
@@ -79,7 +79,7 @@ export function Sidebar({ activeTab }: SidebarProps) {
                   <div className="truncate text-sm font-semibold">{item.label}</div>
                   <div
                     className={`truncate text-[11px] ${
-                      active ? "text-white/80" : "text-slate-400"
+                      active ? "text-white/90" : "text-adaptive-muted"
                     }`}
                   >
                     {item.sublabel}
@@ -95,13 +95,13 @@ export function Sidebar({ activeTab }: SidebarProps) {
         type="button"
         onClick={toggleTheme}
         aria-label={`Switch to ${theme === "dark" ? "light" : "dark"} theme`}
-        className="mt-4 flex items-center justify-between rounded-xl border border-slate-300/60 px-3 py-2 text-xs font-medium text-slate-700 transition hover:border-sky-500 dark:border-white/10 dark:text-slate-200"
+        className="surface-card mt-4 flex min-h-[40px] items-center justify-between rounded-xl px-3 py-2 text-xs font-medium transition hover:border-sky-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500"
       >
         <span>{theme === "dark" ? "Deep Space Dark" : "Clean Daylight"}</span>
         {theme === "dark" ? (
           <Sun className="h-4 w-4 text-sky-400" />
         ) : (
-          <Moon className="h-4 w-4 text-violet-500" />
+          <Moon className="h-4 w-4 text-violet-600" />
         )}
       </button>
     </aside>

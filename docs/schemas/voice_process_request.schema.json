@@ -49,6 +49,11 @@
       ],
       "default": null,
       "title": "Voice Samples"
+    },
+    "remember_language": {
+      "default": true,
+      "title": "Remember Language",
+      "type": "boolean"
     }
   },
   "required": [

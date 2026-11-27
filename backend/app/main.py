@@ -5,13 +5,15 @@ from __future__ import annotations
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 
 from backend.app.api.v1.router import api_router
 from backend.app.core.config import EcosystemSettings, get_settings
 from backend.app.core.container import EcosystemContainer
 from backend.app.core.security import SecurityHeadersMiddleware
+from backend.app.self_healing.healer import CrashRecoveryJournal
 
 
 def create_app(settings: EcosystemSettings | None = None) -> FastAPI:
@@ -46,6 +48,17 @@ def create_app(settings: EcosystemSettings | None = None) -> FastAPI:
         rate_limiter=container.rate_limiter,
     )
     app.include_router(api_router, prefix=cfg.api_v1_prefix)
+
+    @app.exception_handler(Exception)
+    async def crash_recovery_exception_handler(request: Request, exc: Exception) -> JSONResponse:
+        CrashRecoveryJournal().record_crash(path=str(request.url.path), error=repr(exc))
+        return JSONResponse(
+            status_code=500,
+            content={
+                "detail": "Unexpected internal error captured by self-healing crash journal.",
+                "recovery_endpoint": f"{cfg.api_v1_prefix}/self-healing/recover",
+            },
+        )
 
     @app.get("/")
     async def root() -> dict:

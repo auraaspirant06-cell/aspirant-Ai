@@ -352,10 +352,11 @@ def test_multilingual_voice_commands_and_speaker_identity(tmp_path: Path) -> Non
         _, headers = _register_and_headers(client, email="voice@aspirant.ai")
 
         langs = client.get("/api/v1/voice/languages").json()["languages"]
-        assert len(langs) == 13
+        assert len(langs) == 14
 
         samples_by_lang = {
             "hi": "मेरा आज का प्लान खोलो",
+            "hinglish": "Bhai aaj ka schedule aur task batao",
             "en": "Open browser and check notes",
             "bn": "আমাকে বাংলায় সাহায্য করুন",
             "ta": "தமிழில் விளக்கவும்",
@@ -499,3 +500,111 @@ def test_reasoning_self_reflection_social_connectors_and_self_healing(tmp_path: 
         assert by_name["alembic_paths"] == "ok"
         assert by_name["ui_routes"] == "ok"
         assert by_name["api_contracts"] == "ok"
+
+
+def test_live_streaming_voice_presets_mic_windows_smart_memory_and_crash_recovery(
+    tmp_path: Path,
+) -> None:
+    app = create_app(_make_settings(tmp_path))
+    with TestClient(app) as client:
+        _, headers = _register_and_headers(client, email="companion@aspirant.ai")
+
+        # Voice presets, preview, mic diagnostics & consent-gated cloning hook
+        presets = client.get("/api/v1/voice/presets").json()["presets"]
+        assert len(presets) >= 4
+        prev = client.post("/api/v1/voice/preview", json={"preset_id": "aanya-warm"})
+        assert prev.status_code == 200 and prev.json()["ready"] is True
+
+        mic = client.post(
+            "/api/v1/voice/diagnostics/audio",
+            headers=headers,
+            json=[0.001, -0.001, 0.0005, -0.0005] * 4,
+        )
+        assert mic.status_code == 200 and mic.json()["repair_guidance"]
+
+        clone_denied = client.post(
+            "/api/v1/voice/clone/hook",
+            headers=headers,
+            json={
+                "password": "StrongPassword!2026",
+                "explicit_consent": False,
+                "voice_name": "MyVoice",
+                "reference_samples": [0.2, 0.4, -0.3, 0.1] * 4,
+            },
+        )
+        assert clone_denied.status_code == 403
+
+        clone_ok = client.post(
+            "/api/v1/voice/clone/hook",
+            headers=headers,
+            json={
+                "password": "StrongPassword!2026",
+                "explicit_consent": True,
+                "voice_name": "MyVoice",
+                "reference_samples": [0.2, 0.4, -0.3, 0.1] * 4,
+            },
+        )
+        assert clone_ok.status_code == 200 and clone_ok.json()["registered"] is True
+
+        # Streaming SSE Live Companion mode
+        stream = client.post(
+            "/api/v1/voice/companion/stream",
+            headers=headers,
+            json={"transcript": "Bhai aaj ka weather aur goal plan batao"},
+        )
+        assert stream.status_code == 200
+        assert "hinglish" in stream.text and '"done": true' in stream.text
+
+        # Windows integration layer (search, organize dry-run & auth gate, notify, close gate)
+        org_dir = tmp_path / "downloads_org"
+        org_dir.mkdir()
+        (org_dir / "notes.md").write_text("hello", encoding="utf-8")
+        (org_dir / "photo.png").write_bytes(b"PNG")
+
+        searched = client.post(
+            "/api/v1/nova/windows/search-files",
+            headers=headers,
+            json={"query": "notes", "directory": str(org_dir)},
+        )
+        assert searched.status_code == 200 and searched.json()["matches"]
+
+        org_blocked = client.post(
+            "/api/v1/nova/windows/organize",
+            headers=headers,
+            json={"directory": str(org_dir), "dry_run": False, "authorized": False},
+        )
+        assert org_blocked.json()["requires_authorization"] is True
+
+        org_ok = client.post(
+            "/api/v1/nova/windows/organize",
+            headers=headers,
+            json={"directory": str(org_dir), "dry_run": False, "authorized": True},
+        )
+        assert org_ok.json()["applied"] is True and (org_dir / "Documents" / "notes.md").exists()
+
+        win_close_gate = client.post(
+            "/api/v1/nova/windows/manage",
+            headers=headers,
+            json={"action": "close", "title_query": "Notepad", "authorized": False},
+        )
+        assert win_close_gate.json()["requires_authorization"] is True
+
+        # Smart memory action tracking + crash recovery journal endpoints
+        client.post(
+            "/api/v1/memory/actions/track",
+            headers=headers,
+            json={
+                "action": "open_voice_companion",
+                "workflow_name": "Morning Hinglish Briefing",
+                "device_preferences": {"primary_mic": "Studio USB", "theme": "dark"},
+            },
+        )
+        smart = client.get("/api/v1/memory/profile/smart", headers=headers)
+        assert smart.status_code == 200
+        sdata = smart.json()
+        assert sdata["frequent_actions"]["open_voice_companion"] == 1
+        assert "Morning Hinglish Briefing" in sdata["personalized_workflows"]
+        assert sdata["device_preferences"]["primary_mic"] == "Studio USB"
+
+        rec = client.post("/api/v1/self-healing/recover", headers=headers)
+        assert rec.status_code == 200 and rec.json()["status"] == "recovered"

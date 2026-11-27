@@ -41,9 +41,13 @@ class HomeDashboardView(QWidget):
 
         scroll = QScrollArea()
         scroll.setWidgetResizable(True)
+        scroll.setFrameShape(scroll.Shape.NoFrame)
+        scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        scroll.viewport().setStyleSheet("background: transparent;")
         outer.addWidget(scroll)
 
         container = QWidget()
+        container.setStyleSheet("background: transparent;")
         scroll.setWidget(container)
         self.root_layout = QVBoxLayout(container)
         self.root_layout.setContentsMargins(24, 20, 24, 24)
@@ -97,8 +101,10 @@ class HomeDashboardView(QWidget):
         self.disk_tile = StatTile("Storage & Network")
         telemetry_grid.addWidget(self.cpu_tile, 0, 0)
         telemetry_grid.addWidget(self.sys_ram_tile, 0, 1)
-        telemetry_grid.addWidget(self.app_ram_tile, 0, 2)
-        telemetry_grid.addWidget(self.disk_tile, 0, 3)
+        telemetry_grid.addWidget(self.app_ram_tile, 1, 0)
+        telemetry_grid.addWidget(self.disk_tile, 1, 1)
+        telemetry_grid.setColumnStretch(0, 1)
+        telemetry_grid.setColumnStretch(1, 1)
         self.root_layout.addLayout(telemetry_grid)
 
         # Middle Split: Providers + Permissions

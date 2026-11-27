@@ -3,39 +3,75 @@
 @tailwind utilities;
 
 :root {
-  --bg-canvas: #f8fafc;
+  --bg-canvas: #f1f5f9;
   --bg-surface: #ffffff;
-  --bg-elevated: #f1f5f9;
+  --bg-elevated: #e2e8f0;
+  --bg-input: #f8fafc;
   --text-primary: #0f172a;
+  --text-secondary: #334155;
   --text-muted: #475569;
-  --border-subtle: rgba(15, 23, 42, 0.1);
+  --border-subtle: rgba(15, 23, 42, 0.16);
 }
 
 html.dark {
   --bg-canvas: #05070e;
   --bg-surface: #0b1020;
   --bg-elevated: #111827;
+  --bg-input: rgba(15, 23, 42, 0.85);
   --text-primary: #f8fafc;
+  --text-secondary: #cbd5e1;
   --text-muted: #94a3b8;
-  --border-subtle: rgba(255, 255, 255, 0.09);
+  --border-subtle: rgba(255, 255, 255, 0.12);
 }
 
 body {
   background-color: var(--bg-canvas);
   color: var(--text-primary);
   font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  overflow-x: hidden;
   transition: background-color 200ms ease, color 200ms ease;
 }
 
 .glass-panel {
   background: var(--bg-surface);
+  color: var(--text-primary);
   border: 1px solid var(--border-subtle);
   backdrop-filter: blur(16px);
 }
 
 html.dark .glass-panel {
-  background: rgba(11, 16, 32, 0.78);
-  border: 1px solid rgba(255, 255, 255, 0.09);
+  background: rgba(11, 16, 32, 0.84);
+}
+
+.surface-card {
+  background-color: var(--bg-input);
+  color: var(--text-primary);
+  border: 1px solid var(--border-subtle);
+}
+
+.input-surface,
+.select-surface {
+  background-color: var(--bg-input);
+  color: var(--text-primary);
+  border: 1px solid var(--border-subtle);
+  min-height: 40px;
+}
+
+.input-surface::placeholder {
+  color: var(--text-muted);
+}
+
+.select-surface option {
+  background-color: var(--bg-surface);
+  color: var(--text-primary);
+}
+
+.text-adaptive-muted {
+  color: var(--text-muted);
+}
+
+.text-adaptive-body {
+  color: var(--text-secondary);
 }
 
 .gradient-text {

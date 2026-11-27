@@ -330,6 +330,26 @@ def main() -> None:
     shutil.copy2(ASSETS_DIR / "max-mark.png", ROOT / "mobile" / "assets" / "brand" / "max-mark.png")
     shutil.copy2(SPLASH_DIR / "splash-mobile-1080x1920.png", ROOT / "mobile" / "assets" / "brand" / "splash-mobile.png")
 
+    loader_svg = """<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="120" height="120">
+  <defs>
+    <linearGradient id="lg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0EA5E9"/>
+      <stop offset="100%" stop-color="#8B5CF6"/>
+    </linearGradient>
+  </defs>
+  <rect width="120" height="120" rx="28" fill="#05070E"/>
+  <circle cx="60" cy="60" r="42" fill="none" stroke="url(#lg)" stroke-width="5" stroke-dasharray="180 84" stroke-linecap="round">
+    <animateTransform attributeName="transform" type="rotate" from="0 60 60" to="360 60 60" dur="1.5s" repeatCount="indefinite"/>
+  </circle>
+  <circle cx="60" cy="60" r="28" fill="none" stroke="#38BDF8" stroke-width="3" stroke-dasharray="72 52">
+    <animateTransform attributeName="transform" type="rotate" from="360 60 60" to="0 60 60" dur="2.1s" repeatCount="indefinite"/>
+  </circle>
+  <path d="M60 36 L78 80 L69 80 L60 56 L51 80 L42 80 Z" fill="url(#lg)"/>
+</svg>"""
+    (ASSETS_DIR / "aspirant-loader.svg").write_text(loader_svg, encoding="utf-8")
+    shutil.copy2(ASSETS_DIR / "aspirant-loader.svg", ROOT / "frontend" / "public" / "brand" / "loader.svg")
+    shutil.copy2(ASSETS_DIR / "aspirant-loader.svg", ROOT / "desktop" / "assets" / "loader.svg")
+
     (BRAND_DIR / "brand-tokens.json").write_text(json.dumps(PALETTE, indent=2), encoding="utf-8")
     (BRAND_DIR / "brand-kit.html").write_text(
         f"""<!doctype html>

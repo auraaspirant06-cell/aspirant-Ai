@@ -8,6 +8,7 @@ import threading
 import time
 
 import httpx
+from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QApplication
 import uvicorn
 
@@ -57,6 +58,9 @@ def main() -> int:
         except httpx.HTTPError:
             time.sleep(0.05)
 
+    QApplication.setHighDpiScaleFactorRoundingPolicy(
+        Qt.HighDpiScaleFactorRoundingPolicy.PassThrough
+    )
     qt_app = QApplication.instance() or QApplication(sys.argv)
     qt_app.setApplicationName(APP_NAME)
     client = AspirantApiClient(base_url=base_url, api_token=container.api_token)

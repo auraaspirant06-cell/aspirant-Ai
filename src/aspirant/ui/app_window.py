@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from pathlib import Path
 from typing import Callable
 
 from PySide6.QtCore import QEasingCurve, QObject, QPropertyAnimation, Qt, QThread, QTimer, Signal, Slot
@@ -15,6 +16,7 @@ from PySide6.QtWidgets import (
     QMainWindow,
     QMenu,
     QPushButton,
+    QScrollArea,
     QStackedWidget,
     QSystemTrayIcon,
     QVBoxLayout,
@@ -87,6 +89,15 @@ class _PollWorker(QObject):
 
 
 def _create_app_icon() -> QIcon:
+    repo_root = Path(__file__).resolve().parents[3]
+    for candidate in (
+        repo_root / "docs" / "brand" / "assets" / "app-icon-512.png",
+        repo_root / "desktop" / "assets" / "app-icon.png",
+    ):
+        if candidate.exists():
+            icon = QIcon(str(candidate))
+            if not icon.isNull():
+                return icon
     pixmap = QPixmap(64, 64)
     pixmap.fill(Qt.GlobalColor.transparent)
     painter = QPainter(pixmap)
@@ -150,22 +161,37 @@ class AspirantMainWindow(QMainWindow):
         self._nav_buttons: dict[str, QPushButton] = {}
         self._view_indices: dict[str, int] = {}
 
+        nav_scroll = QScrollArea()
+        nav_scroll.setWidgetResizable(True)
+        nav_scroll.setFrameShape(QFrame.Shape.NoFrame)
+        nav_scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        nav_scroll.viewport().setStyleSheet("background: transparent;")
+        nav_container = QWidget()
+        nav_container.setStyleSheet("background: transparent;")
+        nav_layout = QVBoxLayout(nav_container)
+        nav_layout.setContentsMargins(0, 0, 2, 0)
+        nav_layout.setSpacing(3)
+
         last_group = ""
         for group, key, label in NAV_SECTIONS:
             if group != last_group:
                 g_lbl = QLabel(group)
                 g_lbl.setProperty("role", "section-label")
-                side_layout.addWidget(g_lbl)
+                nav_layout.addWidget(g_lbl)
                 last_group = group
             btn = QPushButton(label)
             btn.setCheckable(True)
             btn.setProperty("nav", "true")
+            btn.setMinimumHeight(34)
             btn.clicked.connect(lambda _checked, k=key: self.navigate_to(k))
             self._nav_group.addButton(btn)
             self._nav_buttons[key] = btn
-            side_layout.addWidget(btn)
+            nav_layout.addWidget(btn)
 
-        side_layout.addStretch(1)
+        nav_layout.addStretch(1)
+        nav_scroll.setWidget(nav_container)
+        side_layout.addWidget(nav_scroll, 1)
+
         self.sidebar_ram_lbl = QLabel("Footprint: -- MB")
         self.sidebar_ram_lbl.setProperty("role", "mono")
         side_layout.addWidget(self.sidebar_ram_lbl)

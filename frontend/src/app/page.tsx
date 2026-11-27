@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import Link from "next/link";
 import { ArrowRight, Mic, Share2, ShieldCheck } from "lucide-react";
 import { AgentPipelineView } from "@/components/AgentPipelineView";
+import { BrandLoader } from "@/components/BrandLoader";
 import { CommandBar } from "@/components/CommandBar";
 import { GlassCard } from "@/components/GlassCard";
 import { ProductSuiteGrid } from "@/components/ProductSuiteGrid";
@@ -11,6 +12,7 @@ import { WorkspaceShell } from "@/components/WorkspaceShell";
 import { ecosystemApi } from "@/lib/api";
 
 export default function OverviewPage() {
+  const [busy, setBusy] = useState(false);
   const [selectedAgents, setSelectedAgents] = useState<string[]>([
     "planning",
     "research",
@@ -37,67 +39,87 @@ export default function OverviewPage() {
       {({ token, setStatusNote }) => (
         <div className="space-y-5">
           <CommandBar
+            busy={busy}
             onSubmit={async (prompt) => {
-              if (token) {
-                const res = await ecosystemApi.executeAgents(token, {
-                  objective: prompt,
-                  source_app: "web",
-                });
-                setSelectedAgents(res.selected_agents);
-                setPlanSteps(res.plan_steps);
-                setStatusNote(`Dispatched multi-agent run ${res.run_id.slice(0, 8)}.`);
-              } else {
-                setSelectedAgents(["planning", "research", "coding", "content", "support"]);
-                setPlanSteps([
-                  { order: 1, agent: "planning", output: `Planned: ${prompt}` },
-                  { order: 2, agent: "research", output: "Grounded against hybrid Qdrant/Chroma memory." },
-                ]);
-                setStatusNote("Previewed multi-agent plan (connect JWT to run against backend).");
+              setBusy(true);
+              try {
+                if (token) {
+                  const res = await ecosystemApi.executeAgents(token, {
+                    objective: prompt,
+                    source_app: "web",
+                  });
+                  setSelectedAgents(res.selected_agents);
+                  setPlanSteps(res.plan_steps);
+                  setStatusNote(`Dispatched multi-agent run ${res.run_id.slice(0, 8)}.`);
+                } else {
+                  setSelectedAgents(["planning", "research", "coding", "content", "support"]);
+                  setPlanSteps([
+                    { order: 1, agent: "planning", output: `Planned: ${prompt}` },
+                    { order: 2, agent: "research", output: "Grounded against hybrid Qdrant/Chroma memory." },
+                  ]);
+                  setStatusNote("Previewed multi-agent plan (connect JWT to run against backend).");
+                }
+              } finally {
+                setBusy(false);
               }
             }}
           />
 
+          {busy && <BrandLoader label="Orchestrating collaborative Aspirant AI agents..." />}
+
           <ProductSuiteGrid />
 
           <div className="grid gap-4 md:grid-cols-3 text-xs">
-            <Link href="/voice" className="glass-panel flex items-center justify-between rounded-2xl p-4 hover:border-sky-500/50">
+            <Link
+              href="/voice"
+              className="glass-panel flex min-h-[68px] items-center justify-between rounded-2xl p-4 hover:border-sky-500/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500"
+            >
               <div className="flex items-center gap-3">
-                <Mic className="h-5 w-5 text-sky-400" />
+                <Mic className="h-5 w-5 text-sky-500 dark:text-sky-400" />
                 <div>
-                  <p className="font-bold">Voice & Speaker ID</p>
-                  <p className="text-slate-400">13 Indic languages + voice enrollment</p>
+                  <p className="font-bold">Voice &amp; Speaker ID</p>
+                  <p className="text-adaptive-muted">14 Indic &amp; Hinglish + Mic Health</p>
                 </div>
               </div>
-              <ArrowRight className="h-4 w-4 text-sky-400" />
+              <ArrowRight className="h-4 w-4 text-sky-500 dark:text-sky-400" />
             </Link>
-            <Link href="/integrations" className="glass-panel flex items-center justify-between rounded-2xl p-4 hover:border-violet-500/50">
+            <Link
+              href="/integrations"
+              className="glass-panel flex min-h-[68px] items-center justify-between rounded-2xl p-4 hover:border-violet-500/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500"
+            >
               <div className="flex items-center gap-3">
-                <Share2 className="h-5 w-5 text-violet-400" />
+                <Share2 className="h-5 w-5 text-violet-600 dark:text-violet-400" />
                 <div>
                   <p className="font-bold">Official Social Connectors</p>
-                  <p className="text-slate-400">Telegram, YouTube, Instagram, Discord, X</p>
+                  <p className="text-adaptive-muted">Telegram, YouTube, Instagram, Discord, X</p>
                 </div>
               </div>
-              <ArrowRight className="h-4 w-4 text-violet-400" />
+              <ArrowRight className="h-4 w-4 text-violet-600 dark:text-violet-400" />
             </Link>
-            <Link href="/security" className="glass-panel flex items-center justify-between rounded-2xl p-4 hover:border-emerald-500/50">
+            <Link
+              href="/security"
+              className="glass-panel flex min-h-[68px] items-center justify-between rounded-2xl p-4 hover:border-emerald-500/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500"
+            >
               <div className="flex items-center gap-3">
-                <ShieldCheck className="h-5 w-5 text-emerald-400" />
+                <ShieldCheck className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
                 <div>
-                  <p className="font-bold">Security & Self-Healing</p>
-                  <p className="text-slate-400">Auto-repair diagnostics & audit logs</p>
+                  <p className="font-bold">Security &amp; Self-Healing</p>
+                  <p className="text-adaptive-muted">Auto-repair, crash logs &amp; audit</p>
                 </div>
               </div>
-              <ArrowRight className="h-4 w-4 text-emerald-400" />
+              <ArrowRight className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
             </Link>
           </div>
 
           <GlassCard>
-            <div className="mb-3 flex items-center justify-between">
+            <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
               <h2 className="text-sm font-bold tracking-wide">
                 7 Collaborative Specialists — Live Shared Context
               </h2>
-              <Link href="/agents" className="text-xs font-semibold text-sky-400 hover:underline">
+              <Link
+                href="/agents"
+                className="text-xs font-semibold text-sky-600 hover:underline dark:text-sky-400"
+              >
                 Open Deep Reasoning Console
               </Link>
             </div>

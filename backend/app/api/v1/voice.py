@@ -1,20 +1,29 @@
-"""Voice intelligence, continuous listening, command execution, and speaker recognition endpoints."""
+"""Voice intelligence, streaming companion dialogue, presets/cloning hooks, mic diagnostics & speaker ID."""
 
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, HTTPException, status
+import json
+
+from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.app.api.deps import AuthenticatedPrincipal, get_container, get_current_user, get_db_session
 from backend.app.core.container import EcosystemContainer
 from backend.app.domain.entities import ProductSource
+from backend.app.voice.diagnostics import diagnose_audio_devices
 from backend.app.voice.intelligence import (
     LANGUAGE_NAMES,
     SAME_LANGUAGE_GREETINGS,
     VoiceCommandRouter,
     detect_voice_language,
     evaluate_voice_signal,
+)
+from backend.app.voice.presets import (
+    VoiceCloneHookService,
+    build_voice_preview,
+    list_voice_presets,
 )
 from backend.app.voice.speaker_id import VoiceIdentityService
 
@@ -34,6 +43,18 @@ class VoiceVerifyRequest(BaseModel):
     samples: list[float] = Field(min_length=8)
 
 
+class VoicePreviewRequest(BaseModel):
+    preset_id: str = "aanya-warm"
+    sample_text: str | None = None
+
+
+class VoiceCloneHookRequest(BaseModel):
+    password: str = Field(min_length=1)
+    explicit_consent: bool = False
+    voice_name: str = "Owner Custom Voice"
+    reference_samples: list[float] = Field(min_length=8)
+
+
 class VoiceProcessRequest(BaseModel):
     transcript: str = Field(min_length=1)
     always_listening: bool = True
@@ -43,6 +64,7 @@ class VoiceProcessRequest(BaseModel):
     barge_in: bool = False
     explicit_authorization: bool = False
     voice_samples: list[float] | None = None
+    remember_language: bool = True
 
 
 @router.get("/languages")
@@ -51,6 +73,50 @@ async def supported_languages() -> dict:
         "count": len(LANGUAGE_NAMES),
         "languages": [{"code": k, "name": v} for k, v in LANGUAGE_NAMES.items()],
     }
+
+
+@router.get("/presets")
+async def get_voice_presets() -> dict:
+    return {"presets": list_voice_presets()}
+
+
+@router.post("/preview")
+async def preview_voice(body: VoicePreviewRequest) -> dict:
+    return build_voice_preview(body.preset_id, body.sample_text)
+
+
+@router.get("/diagnostics/audio")
+async def audio_diagnostics(
+    principal: AuthenticatedPrincipal = Depends(get_current_user),
+) -> dict:
+    return diagnose_audio_devices()
+
+
+@router.post("/diagnostics/audio")
+async def audio_diagnostics_with_samples(
+    samples: list[float],
+    principal: AuthenticatedPrincipal = Depends(get_current_user),
+) -> dict:
+    return diagnose_audio_devices(test_samples=samples)
+
+
+@router.post("/clone/hook")
+async def register_voice_clone_hook(
+    body: VoiceCloneHookRequest,
+    principal: AuthenticatedPrincipal = Depends(get_current_user),
+    session: AsyncSession = Depends(get_db_session),
+) -> dict:
+    svc = VoiceCloneHookService(session)
+    try:
+        return await svc.register_clone_hook(
+            user_id=principal.user.id,
+            password=body.password,
+            explicit_consent=body.explicit_consent,
+            voice_name=body.voice_name,
+            reference_samples=body.reference_samples,
+        )
+    except PermissionError as exc:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=str(exc)) from exc
 
 
 @router.post("/identity/enroll")
@@ -145,12 +211,17 @@ async def process_voice_utterance(
     else:
         ai_res = await container.ai_router.generate(
             prompt=f"Reply strictly in {lang_name} ({lang_code}). User voice command: {body.transcript}",
-            system_instruction=f"Respond naturally in {lang_name}. Keep voice response clear and interruptible.",
+            system_instruction=f"Respond naturally in {lang_name}. Keep voice response warm, clear, and interruptible.",
             task_type="fast",
         )
         reply = f"{greeting} ({lang_name}): {ai_res.text}"
 
     memory = container.build_memory_service(session)
+    if body.remember_language:
+        await memory.set_preferences(
+            principal.user.id,
+            {"language_preference": lang_code},
+        )
     await memory.record_conversation_turn(
         user_id=principal.user.id,
         role="user",
@@ -161,6 +232,7 @@ async def process_voice_utterance(
     return {
         "language": lang_code,
         "language_name": lang_name,
+        "remembered_language": lang_code,
         "always_listening": body.always_listening,
         "confidence": signal.confidence,
         "far_field_detected": signal.far_field_detected,
@@ -175,3 +247,29 @@ async def process_voice_utterance(
         "authorized": cmd.authorized,
         "reply_text": reply,
     }
+
+
+@router.post("/companion/stream")
+async def companion_stream(
+    body: VoiceProcessRequest,
+    principal: AuthenticatedPrincipal = Depends(get_current_user),
+    container: EcosystemContainer = Depends(get_container),
+    session: AsyncSession = Depends(get_db_session),
+) -> StreamingResponse:
+    lang_code, lang_name = detect_voice_language(body.transcript)
+    ai_res = await container.ai_router.generate(
+        prompt=f"Conversational reply in {lang_name}: {body.transcript}",
+        system_instruction=f"Act as a human-like live voice companion in {lang_name}.",
+        task_type="fast",
+    )
+    greeting = SAME_LANGUAGE_GREETINGS.get(lang_code, "Understood")
+    full_reply = f"{greeting} — {ai_res.text}"
+    words = full_reply.split(" ")
+
+    async def event_gen():
+        for idx, word in enumerate(words):
+            chunk = {"index": idx, "token": word, "language": lang_code, "interruptible": True}
+            yield f"data: {json.dumps(chunk)}\n\n"
+        yield f"data: {json.dumps({'done': True, 'language': lang_code})}\n\n"
+
+    return StreamingResponse(event_gen(), media_type="text/event-stream")

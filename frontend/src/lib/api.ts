@@ -30,6 +30,16 @@ export interface VoicePipelineResponse {
   speaker_verified: boolean;
   access_level: string;
   reply_text: string;
+  remembered_language?: string;
+}
+
+export interface AudioDiagnosticsResponse {
+  mic_available: boolean;
+  input_devices: Array<{ index: number; name: string; default_samplerate: number }>;
+  output_devices: Array<{ index: number; name: string; default_samplerate: number }>;
+  health_status: string;
+  issues_detected: string[];
+  repair_guidance: string[];
 }
 
 export interface SelfHealReport {
@@ -105,6 +115,12 @@ export const ecosystemApi = {
       { method: "POST", body: JSON.stringify({ content }) },
       token
     ),
+  novaWindowsList: (token: string) =>
+    requestJson<{ platform: string; windows: Array<{ hwnd: number; title: string }> }>(
+      "/nova/windows/list",
+      { method: "GET" },
+      token
+    ),
   mjChat: (token: string, message: string) =>
     requestJson<{
       reply: string;
@@ -124,6 +140,12 @@ export const ecosystemApi = {
       query: string;
       results: Array<{ id: string; content: string; layer: string; score: number }>;
     }>(`/memory/search?q=${encodeURIComponent(q)}`, { method: "GET" }, token),
+  smartMemoryProfile: (token: string) =>
+    requestJson<{
+      language_preference: string;
+      frequent_actions: Record<string, number>;
+      device_preferences: Record<string, unknown>;
+    }>("/memory/profile/smart", { method: "GET" }, token),
   voiceProcess: (
     token: string,
     body: {
@@ -136,6 +158,16 @@ export const ecosystemApi = {
     requestJson<VoicePipelineResponse>(
       "/voice/process",
       { method: "POST", body: JSON.stringify(body) },
+      token
+    ),
+  voicePresets: () =>
+    requestJson<{
+      presets: Array<{ id: string; name: string; accent: string; style: string; voice_id: string }>;
+    }>("/voice/presets"),
+  voiceAudioDiagnostics: (token: string) =>
+    requestJson<AudioDiagnosticsResponse>(
+      "/voice/diagnostics/audio",
+      { method: "GET" },
       token
     ),
   integrationsCatalog: (token: string) =>
@@ -151,6 +183,12 @@ export const ecosystemApi = {
     requestJson<SelfHealReport>(
       repair ? "/self-healing/repair" : "/self-healing/audit",
       { method: repair ? "POST" : "GET" },
+      token
+    ),
+  crashRecoveryLogs: (token: string) =>
+    requestJson<{ crashes: Array<{ timestamp: string; path: string; error: string }> }>(
+      "/self-healing/crashes",
+      { method: "GET" },
       token
     ),
 };

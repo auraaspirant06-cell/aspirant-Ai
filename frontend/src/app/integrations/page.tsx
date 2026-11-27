@@ -15,7 +15,9 @@ const PLATFORMS = [
 ];
 
 export default function IntegrationsPage() {
-  const [syncText, setSyncText] = useState("All connectors operate strictly via official REST APIs with encrypted tokens and rate limits.");
+  const [syncText, setSyncText] = useState(
+    "All connectors operate strictly via official REST APIs with encrypted tokens and rate limits."
+  );
 
   return (
     <WorkspaceShell routeId="integrations">
@@ -23,7 +25,7 @@ export default function IntegrationsPage() {
         <GlassCard>
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="flex items-center gap-2">
-              <Share2 className="h-5 w-5 text-violet-400" />
+              <Share2 className="h-5 w-5 text-violet-600 dark:text-violet-400" />
               <h2 className="text-lg font-bold">Modular Social Platform Connectors</h2>
             </div>
             <button
@@ -31,21 +33,23 @@ export default function IntegrationsPage() {
               onClick={async () => {
                 if (token) {
                   const res = await ecosystemApi.integrationsCatalog(token);
-                  setSyncText(`Loaded ${res.connectors.length} official API connectors from backend.`);
+                  setSyncText(
+                    `Loaded ${res.connectors.length} official API connectors from backend.`
+                  );
                   setStatusNote("Refreshed integration connector catalog.");
                 }
               }}
-              className="rounded-xl border border-white/10 px-3 py-1.5 text-xs font-semibold hover:border-sky-500"
+              className="surface-card min-h-[40px] rounded-xl px-3.5 py-1.5 text-xs font-semibold hover:border-sky-500"
             >
               Refresh Connector Status
             </button>
           </div>
-          <p className="mt-2 text-xs text-slate-400">{syncText}</p>
+          <p className="mt-2 text-xs text-adaptive-muted">{syncText}</p>
           <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3 text-xs">
             {PLATFORMS.map((p) => (
-              <div key={p.platform} className="rounded-xl border border-white/10 bg-white/[0.03] p-4">
-                <p className="font-bold text-sky-400">{p.name}</p>
-                <p className="mt-1 text-slate-400">{p.scope}</p>
+              <div key={p.platform} className="surface-card rounded-xl p-4">
+                <p className="font-bold text-sky-600 dark:text-sky-400">{p.name}</p>
+                <p className="mt-1 text-adaptive-muted">{p.scope}</p>
               </div>
             ))}
           </div>

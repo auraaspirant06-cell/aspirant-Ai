@@ -693,6 +693,82 @@
         ]
       }
     },
+    "/api/v1/memory/actions/track": {
+      "post": {
+        "tags": [
+          "Memory & RAG"
+        ],
+        "summary": "Track Frequent Action",
+        "operationId": "track_frequent_action_api_v1_memory_actions_track_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ActionTrackRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response Track Frequent Action Api V1 Memory Actions Track Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/memory/profile/smart": {
+      "get": {
+        "tags": [
+          "Memory & RAG"
+        ],
+        "summary": "Smart Memory Profile",
+        "operationId": "smart_memory_profile_api_v1_memory_profile_smart_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response Smart Memory Profile Api V1 Memory Profile Smart Get"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
     "/api/v1/agents/catalog": {
       "get": {
         "tags": [
@@ -1153,6 +1229,198 @@
         }
       }
     },
+    "/api/v1/voice/presets": {
+      "get": {
+        "tags": [
+          "Voice Intelligence & Identity"
+        ],
+        "summary": "Get Voice Presets",
+        "operationId": "get_voice_presets_api_v1_voice_presets_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response Get Voice Presets Api V1 Voice Presets Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/voice/preview": {
+      "post": {
+        "tags": [
+          "Voice Intelligence & Identity"
+        ],
+        "summary": "Preview Voice",
+        "operationId": "preview_voice_api_v1_voice_preview_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VoicePreviewRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response Preview Voice Api V1 Voice Preview Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/voice/diagnostics/audio": {
+      "get": {
+        "tags": [
+          "Voice Intelligence & Identity"
+        ],
+        "summary": "Audio Diagnostics",
+        "operationId": "audio_diagnostics_api_v1_voice_diagnostics_audio_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response Audio Diagnostics Api V1 Voice Diagnostics Audio Get"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "Voice Intelligence & Identity"
+        ],
+        "summary": "Audio Diagnostics With Samples",
+        "operationId": "audio_diagnostics_with_samples_api_v1_voice_diagnostics_audio_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "items": {
+                  "type": "number"
+                },
+                "type": "array",
+                "title": "Samples"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response Audio Diagnostics With Samples Api V1 Voice Diagnostics Audio Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/voice/clone/hook": {
+      "post": {
+        "tags": [
+          "Voice Intelligence & Identity"
+        ],
+        "summary": "Register Voice Clone Hook",
+        "operationId": "register_voice_clone_hook_api_v1_voice_clone_hook_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VoiceCloneHookRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response Register Voice Clone Hook Api V1 Voice Clone Hook Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
     "/api/v1/voice/identity/enroll": {
       "post": {
         "tags": [
@@ -1276,6 +1544,50 @@
                   "type": "object",
                   "title": "Response Process Voice Utterance Api V1 Voice Process Post"
                 }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/voice/companion/stream": {
+      "post": {
+        "tags": [
+          "Voice Intelligence & Identity"
+        ],
+        "summary": "Companion Stream",
+        "operationId": "companion_stream_api_v1_voice_companion_stream_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VoiceProcessRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
               }
             }
           },
@@ -1574,6 +1886,62 @@
         ]
       }
     },
+    "/api/v1/self-healing/crashes": {
+      "get": {
+        "tags": [
+          "Self-Healing System"
+        ],
+        "summary": "List Crashes",
+        "operationId": "list_crashes_api_v1_self_healing_crashes_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response List Crashes Api V1 Self Healing Crashes Get"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/self-healing/recover": {
+      "post": {
+        "tags": [
+          "Self-Healing System"
+        ],
+        "summary": "Recover Platform",
+        "operationId": "recover_platform_api_v1_self_healing_recover_post",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response Recover Platform Api V1 Self Healing Recover Post"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
     "/api/v1/nova/wake-word": {
       "post": {
         "tags": [
@@ -1835,6 +2203,274 @@
                   "additionalProperties": true,
                   "type": "object",
                   "title": "Response Run Workflow Api V1 Nova Workflow Run Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/nova/windows/list": {
+      "get": {
+        "tags": [
+          "NOVA Desktop AI"
+        ],
+        "summary": "Windows List",
+        "operationId": "windows_list_api_v1_nova_windows_list_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response Windows List Api V1 Nova Windows List Get"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/nova/windows/manage": {
+      "post": {
+        "tags": [
+          "NOVA Desktop AI"
+        ],
+        "summary": "Windows Manage",
+        "operationId": "windows_manage_api_v1_nova_windows_manage_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WindowManageRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response Windows Manage Api V1 Nova Windows Manage Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/nova/windows/search-files": {
+      "post": {
+        "tags": [
+          "NOVA Desktop AI"
+        ],
+        "summary": "Windows Search Files",
+        "operationId": "windows_search_files_api_v1_nova_windows_search_files_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SearchFilesRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response Windows Search Files Api V1 Nova Windows Search Files Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/nova/windows/organize": {
+      "post": {
+        "tags": [
+          "NOVA Desktop AI"
+        ],
+        "summary": "Windows Organize",
+        "operationId": "windows_organize_api_v1_nova_windows_organize_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OrganizeDirRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response Windows Organize Api V1 Nova Windows Organize Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/nova/windows/launch": {
+      "post": {
+        "tags": [
+          "NOVA Desktop AI"
+        ],
+        "summary": "Windows Launch App",
+        "operationId": "windows_launch_app_api_v1_nova_windows_launch_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LaunchAppRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response Windows Launch App Api V1 Nova Windows Launch Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/nova/windows/notify": {
+      "post": {
+        "tags": [
+          "NOVA Desktop AI"
+        ],
+        "summary": "Windows Notify",
+        "operationId": "windows_notify_api_v1_nova_windows_notify_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NotifyRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response Windows Notify Api V1 Nova Windows Notify Post"
                 }
               }
             }
@@ -2388,6 +3024,43 @@
   },
   "components": {
     "schemas": {
+      "ActionTrackRequest": {
+        "properties": {
+          "action": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Action"
+          },
+          "workflow_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Workflow Name"
+          },
+          "device_preferences": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Device Preferences"
+          }
+        },
+        "type": "object",
+        "required": [
+          "action"
+        ],
+        "title": "ActionTrackRequest"
+      },
       "AgentExecuteRequest": {
         "properties": {
           "objective": {
@@ -2777,6 +3450,24 @@
         ],
         "title": "HabitRequest"
       },
+      "LaunchAppRequest": {
+        "properties": {
+          "app_name": {
+            "type": "string",
+            "title": "App Name"
+          },
+          "authorized": {
+            "type": "boolean",
+            "title": "Authorized",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "app_name"
+        ],
+        "title": "LaunchAppRequest"
+      },
       "LoginRequest": {
         "properties": {
           "email": {
@@ -2920,6 +3611,24 @@
         ],
         "title": "NoteRequest"
       },
+      "NotifyRequest": {
+        "properties": {
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          }
+        },
+        "type": "object",
+        "required": [
+          "title",
+          "message"
+        ],
+        "title": "NotifyRequest"
+      },
       "OCRImageRequest": {
         "properties": {
           "image_base64": {
@@ -2932,6 +3641,29 @@
           "image_base64"
         ],
         "title": "OCRImageRequest"
+      },
+      "OrganizeDirRequest": {
+        "properties": {
+          "directory": {
+            "type": "string",
+            "title": "Directory"
+          },
+          "dry_run": {
+            "type": "boolean",
+            "title": "Dry Run",
+            "default": true
+          },
+          "authorized": {
+            "type": "boolean",
+            "title": "Authorized",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "directory"
+        ],
+        "title": "OrganizeDirRequest"
       },
       "PreferencesRequest": {
         "properties": {
@@ -3172,6 +3904,31 @@
         ],
         "title": "ReminderRequest"
       },
+      "SearchFilesRequest": {
+        "properties": {
+          "query": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Query"
+          },
+          "directory": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Directory"
+          }
+        },
+        "type": "object",
+        "required": [
+          "query"
+        ],
+        "title": "SearchFilesRequest"
+      },
       "ValidationError": {
         "properties": {
           "loc": {
@@ -3211,6 +3968,39 @@
           "type"
         ],
         "title": "ValidationError"
+      },
+      "VoiceCloneHookRequest": {
+        "properties": {
+          "password": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Password"
+          },
+          "explicit_consent": {
+            "type": "boolean",
+            "title": "Explicit Consent",
+            "default": false
+          },
+          "voice_name": {
+            "type": "string",
+            "title": "Voice Name",
+            "default": "Owner Custom Voice"
+          },
+          "reference_samples": {
+            "items": {
+              "type": "number"
+            },
+            "type": "array",
+            "minItems": 8,
+            "title": "Reference Samples"
+          }
+        },
+        "type": "object",
+        "required": [
+          "password",
+          "reference_samples"
+        ],
+        "title": "VoiceCloneHookRequest"
       },
       "VoiceCommandRequest": {
         "properties": {
@@ -3266,6 +4056,28 @@
         ],
         "title": "VoiceEnrollRequest"
       },
+      "VoicePreviewRequest": {
+        "properties": {
+          "preset_id": {
+            "type": "string",
+            "title": "Preset Id",
+            "default": "aanya-warm"
+          },
+          "sample_text": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sample Text"
+          }
+        },
+        "type": "object",
+        "title": "VoicePreviewRequest"
+      },
       "VoiceProcessRequest": {
         "properties": {
           "transcript": {
@@ -3316,6 +4128,11 @@
               }
             ],
             "title": "Voice Samples"
+          },
+          "remember_language": {
+            "type": "boolean",
+            "title": "Remember Language",
+            "default": true
           }
         },
         "type": "object",
@@ -3372,6 +4189,29 @@
           "event"
         ],
         "title": "WebhookEventRequest"
+      },
+      "WindowManageRequest": {
+        "properties": {
+          "action": {
+            "type": "string",
+            "title": "Action"
+          },
+          "title_query": {
+            "type": "string",
+            "title": "Title Query"
+          },
+          "authorized": {
+            "type": "boolean",
+            "title": "Authorized",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "action",
+          "title_query"
+        ],
+        "title": "WindowManageRequest"
       },
       "WorkflowRequest": {
         "properties": {

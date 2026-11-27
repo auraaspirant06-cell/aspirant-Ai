@@ -9,6 +9,14 @@ from pydantic import BaseModel, Field
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from apps.nova.service import NovaService
+from apps.nova.windows_integration import (
+    launch_safe_application,
+    list_desktop_windows,
+    manage_window,
+    organize_directory,
+    search_workspace_files,
+    send_windows_notification,
+)
 from backend.app.api.deps import AuthenticatedPrincipal, get_container, get_current_user, get_db_session
 from backend.app.core.container import EcosystemContainer
 
@@ -116,3 +124,87 @@ async def run_workflow(
         name=body.name,
         steps=body.steps,
     )
+
+
+class WindowManageRequest(BaseModel):
+    action: str
+    title_query: str
+    authorized: bool = False
+
+
+class SearchFilesRequest(BaseModel):
+    query: str = Field(min_length=1)
+    directory: str | None = None
+
+
+class OrganizeDirRequest(BaseModel):
+    directory: str
+    dry_run: bool = True
+    authorized: bool = False
+
+
+class LaunchAppRequest(BaseModel):
+    app_name: str
+    authorized: bool = False
+
+
+class NotifyRequest(BaseModel):
+    title: str
+    message: str
+
+
+@router.get("/windows/list")
+async def windows_list(
+    principal: AuthenticatedPrincipal = Depends(get_current_user),
+) -> dict:
+    return list_desktop_windows()
+
+
+@router.post("/windows/manage")
+async def windows_manage(
+    body: WindowManageRequest,
+    principal: AuthenticatedPrincipal = Depends(get_current_user),
+) -> dict:
+    return manage_window(
+        action=body.action, title_query=body.title_query, authorized=body.authorized
+    )
+
+
+@router.post("/windows/search-files")
+async def windows_search_files(
+    body: SearchFilesRequest,
+    principal: AuthenticatedPrincipal = Depends(get_current_user),
+) -> dict:
+    try:
+        return search_workspace_files(query=body.query, directory=body.directory)
+    except PermissionError as exc:
+        raise HTTPException(status_code=403, detail=str(exc)) from exc
+
+
+@router.post("/windows/organize")
+async def windows_organize(
+    body: OrganizeDirRequest,
+    principal: AuthenticatedPrincipal = Depends(get_current_user),
+) -> dict:
+    try:
+        return organize_directory(
+            directory=body.directory, dry_run=body.dry_run, authorized=body.authorized
+        )
+    except PermissionError as exc:
+        raise HTTPException(status_code=403, detail=str(exc)) from exc
+
+
+@router.post("/windows/launch")
+async def windows_launch_app(
+    body: LaunchAppRequest,
+    principal: AuthenticatedPrincipal = Depends(get_current_user),
+) -> dict:
+    return launch_safe_application(app_name=body.app_name, authorized=body.authorized)
+
+
+@router.post("/windows/notify")
+async def windows_notify(
+    body: NotifyRequest,
+    principal: AuthenticatedPrincipal = Depends(get_current_user),
+) -> dict:
+    return send_windows_notification(title=body.title, message=body.message)

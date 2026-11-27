@@ -7,6 +7,7 @@ import importlib
 import json
 import re
 from dataclasses import dataclass, field
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
@@ -300,3 +301,34 @@ class RepositorySelfHealer:
             repaired=repaired,
             security_findings=sec_findings,
         )
+
+
+class CrashRecoveryJournal:
+    """Captures unhandled runtime crashes safely and cleans stale locks during self-recovery."""
+
+    def __init__(self, root: Path = REPO_ROOT) -> None:
+        self.root = root
+        self.journal_path = root / "data" / "crash_recovery.jsonl"
+
+    def record_crash(self, *, path: str, error: str) -> None:
+        self.journal_path.parent.mkdir(parents=True, exist_ok=True)
+        entry = {
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "path": path,
+            "error": error[:400],
+        }
+        with self.journal_path.open("a", encoding="utf-8") as fh:
+            fh.write(json.dumps(entry) + "\n")
+
+    def list_crashes(self, limit: int = 25) -> list[dict[str, str]]:
+        if not self.journal_path.exists():
+            return []
+        lines = self.journal_path.read_text(encoding="utf-8").splitlines()[-limit:]
+        return [json.loads(line) for line in lines if line.strip()]
+
+    def recover(self) -> dict[str, Any]:
+        cleaned: list[str] = []
+        for lock_file in (self.root / "data").glob("*.lock"):
+            lock_file.unlink(missing_ok=True)
+            cleaned.append(f"Removed stale lock {lock_file.name}")
+        return {"status": "recovered", "actions": cleaned, "crash_count": len(self.list_crashes())}

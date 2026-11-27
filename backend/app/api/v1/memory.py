@@ -159,3 +159,35 @@ async def query_knowledge(
         question=body.question,
         top_k=body.top_k,
     )
+
+
+class ActionTrackRequest(BaseModel):
+    action: str = Field(min_length=1)
+    workflow_name: str | None = None
+    device_preferences: dict | None = None
+
+
+@router.post("/actions/track")
+async def track_frequent_action(
+    body: ActionTrackRequest,
+    principal: AuthenticatedPrincipal = Depends(get_current_user),
+    container: EcosystemContainer = Depends(get_container),
+    session: AsyncSession = Depends(get_db_session),
+) -> dict:
+    mem = container.build_memory_service(session)
+    return await mem.track_action_usage(
+        user_id=principal.user.id,
+        action=body.action,
+        workflow_name=body.workflow_name,
+        device_preferences=body.device_preferences,
+    )
+
+
+@router.get("/profile/smart")
+async def smart_memory_profile(
+    principal: AuthenticatedPrincipal = Depends(get_current_user),
+    container: EcosystemContainer = Depends(get_container),
+    session: AsyncSession = Depends(get_db_session),
+) -> dict:
+    mem = container.build_memory_service(session)
+    return await mem.get_smart_profile(principal.user.id)

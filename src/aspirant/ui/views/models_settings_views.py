@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from typing import Any, Callable
 
+from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
     QComboBox,
     QGridLayout,
@@ -41,9 +42,13 @@ class ModelsView(QWidget):
         outer.setContentsMargins(0, 0, 0, 0)
         scroll = QScrollArea()
         scroll.setWidgetResizable(True)
+        scroll.setFrameShape(scroll.Shape.NoFrame)
+        scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        scroll.viewport().setStyleSheet("background: transparent;")
         outer.addWidget(scroll)
 
         body = QWidget()
+        body.setStyleSheet("background: transparent;")
         scroll.setWidget(body)
         layout = QVBoxLayout(body)
         layout.setContentsMargins(24, 20, 24, 24)
@@ -213,9 +218,13 @@ class SettingsView(QWidget):
         outer.setContentsMargins(0, 0, 0, 0)
         scroll = QScrollArea()
         scroll.setWidgetResizable(True)
+        scroll.setFrameShape(scroll.Shape.NoFrame)
+        scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        scroll.viewport().setStyleSheet("background: transparent;")
         outer.addWidget(scroll)
 
         body = QWidget()
+        body.setStyleSheet("background: transparent;")
         scroll.setWidget(body)
         layout = QVBoxLayout(body)
         layout.setContentsMargins(24, 20, 24, 24)

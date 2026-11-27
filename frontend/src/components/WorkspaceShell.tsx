@@ -59,17 +59,17 @@ export function WorkspaceShell({ routeId, children }: WorkspaceShellProps) {
     >
       <Sidebar activeTab={route.id} />
 
-      <main className="flex-1 space-y-5">
+      <main className="min-w-0 flex-1 space-y-5">
         <header className="glass-panel flex flex-col justify-between gap-4 rounded-2xl p-5 sm:flex-row sm:items-center">
-          <div>
-            <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-sky-400">
-              <Activity className="h-3.5 w-3.5" />
-              <span>Unified Personal AI Operating System • {route.href}</span>
+          <div className="min-w-0">
+            <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-sky-500 dark:text-sky-400">
+              <Activity className="h-3.5 w-3.5 shrink-0" />
+              <span className="truncate">Unified Personal AI Operating System &bull; {route.href}</span>
             </div>
             <h1 className="mt-1 text-2xl font-bold tracking-tight">
               <span className="gradient-text">{route.screenTitle}</span>
             </h1>
-            <p className="mt-1 text-xs text-slate-400">{statusNote}</p>
+            <p className="mt-1 text-xs text-adaptive-muted">{statusNote}</p>
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
@@ -80,7 +80,7 @@ export function WorkspaceShell({ routeId, children }: WorkspaceShellProps) {
               id="auth-email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="rounded-xl border border-white/10 bg-black/20 px-3 py-1.5 text-xs outline-none focus:border-sky-500"
+              className="input-surface rounded-xl px-3 py-1.5 text-xs outline-none focus-visible:ring-2 focus-visible:ring-sky-500"
             />
             <label htmlFor="auth-pass" className="sr-only">
               Password
@@ -90,13 +90,13 @@ export function WorkspaceShell({ routeId, children }: WorkspaceShellProps) {
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-32 rounded-xl border border-white/10 bg-black/20 px-3 py-1.5 text-xs outline-none focus:border-sky-500"
+              className="input-surface w-32 rounded-xl px-3 py-1.5 text-xs outline-none focus-visible:ring-2 focus-visible:ring-sky-500"
             />
             <button
               type="button"
               onClick={handleAuthenticate}
               disabled={busy}
-              className="inline-flex items-center gap-1.5 rounded-xl bg-aspirant-gradient px-3.5 py-1.5 text-xs font-semibold text-white"
+              className="inline-flex min-h-[40px] items-center gap-1.5 rounded-xl bg-aspirant-gradient px-3.5 py-2 text-xs font-semibold text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500"
             >
               <KeyRound className="h-3.5 w-3.5" />
               <span>{token ? "Connected" : "Connect JWT"}</span>
@@ -104,7 +104,7 @@ export function WorkspaceShell({ routeId, children }: WorkspaceShellProps) {
             <Link
               href="/settings"
               aria-label="Open System Settings"
-              className="rounded-xl border border-white/10 p-1.5 text-slate-300 hover:border-sky-500 hover:text-sky-400"
+              className="surface-card inline-flex min-h-[40px] min-w-[40px] items-center justify-center rounded-xl hover:border-sky-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500"
             >
               <Settings className="h-4 w-4" />
             </Link>

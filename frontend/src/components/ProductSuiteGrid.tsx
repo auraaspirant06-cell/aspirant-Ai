@@ -19,10 +19,10 @@ const PRODUCTS: Array<{
     href: "/nova",
     title: "NOVA",
     role: "Windows Desktop Autonomous Operator",
-    accent: "text-sky-400 border-sky-500/30",
+    accent: "text-sky-600 dark:text-sky-400 border-sky-500/40",
     bullets: [
       'Wake word "Hey Nova" + continuous natural voice',
-      "System, browser, clipboard & WinRT OCR intelligence",
+      "Windows integration, clipboard & WinRT OCR intelligence",
       "Command guardrails & multi-agent desktop execution",
     ],
   },
@@ -31,7 +31,7 @@ const PRODUCTS: Array<{
     href: "/mj",
     title: "MJ",
     role: "Human-Like Deep Intelligence",
-    accent: "text-violet-400 border-violet-500/30",
+    accent: "text-violet-600 dark:text-violet-400 border-violet-500/40",
     bullets: [
       "Persistent cross-device memory & user profiling",
       "Document RAG synthesis, email & calendar awareness",
@@ -43,7 +43,7 @@ const PRODUCTS: Array<{
     href: "/max",
     title: "MAX",
     role: "Android-First Mobile Companion",
-    accent: "text-indigo-400 border-indigo-500/30",
+    accent: "text-indigo-600 dark:text-indigo-400 border-indigo-500/40",
     bullets: [
       "Offline SQLite queue with delta sync reconciliation",
       "Voice commands, habit streaks & smart reminders",
@@ -61,23 +61,23 @@ export function ProductSuiteGrid() {
             <div className="flex items-start justify-between gap-3">
               <div className="flex items-center gap-3">
                 <BrandMark product={p.id} size={42} />
-                <div>
+                <div className="min-w-0">
                   <h2 className="text-base font-bold tracking-wide">{p.title}</h2>
-                  <p className="text-xs text-slate-400">{p.role}</p>
+                  <p className="text-xs text-adaptive-muted">{p.role}</p>
                 </div>
               </div>
               <Link
                 href={p.href}
                 aria-label={`Open ${p.title} workspace`}
-                className={`rounded-lg border p-1.5 transition hover:scale-105 ${p.accent}`}
+                className={`inline-flex min-h-[36px] min-w-[36px] items-center justify-center rounded-lg border p-1.5 transition hover:scale-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500 ${p.accent}`}
               >
                 <ArrowUpRight className="h-4 w-4" />
               </Link>
             </div>
-            <ul className="mt-4 space-y-2 text-xs text-slate-500 dark:text-slate-300">
+            <ul className="mt-4 space-y-2 text-xs text-adaptive-body">
               {p.bullets.map((b) => (
                 <li key={b} className="flex items-start gap-2">
-                  <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-sky-400" />
+                  <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-sky-500" />
                   <span>{b}</span>
                 </li>
               ))}
@@ -85,7 +85,7 @@ export function ProductSuiteGrid() {
           </div>
           <Link
             href={p.href}
-            className="mt-5 block w-full rounded-xl border border-white/10 bg-white/5 py-2 text-center text-xs font-semibold transition hover:border-sky-500/50 hover:text-sky-400"
+            className="surface-card mt-5 flex min-h-[40px] w-full items-center justify-center rounded-xl text-xs font-semibold transition hover:border-sky-500/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500"
           >
             Launch {p.title} Console
           </Link>

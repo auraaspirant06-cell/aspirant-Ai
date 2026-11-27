@@ -192,3 +192,43 @@ class MemoryService:
         if deleted:
             self._vectors.delete(record_id=memory_id)
         return deleted
+
+    async def track_action_usage(
+        self,
+        *,
+        user_id: str,
+        action: str,
+        workflow_name: str | None = None,
+        device_preferences: dict | None = None,
+    ) -> dict:
+        user = await self._users.get_by_id(user_id)
+        prefs = dict(user.preferences) if user else {}
+        freq = dict(prefs.get("frequent_actions") or {})
+        clean_act = action.strip().lower()
+        freq[clean_act] = int(freq.get(clean_act, 0)) + 1
+        patch: dict = {"frequent_actions": freq}
+        if workflow_name:
+            workflows = list(prefs.get("personalized_workflows") or [])
+            if workflow_name not in workflows:
+                workflows.append(workflow_name)
+            patch["personalized_workflows"] = workflows
+        if device_preferences:
+            merged_dev = dict(prefs.get("device_preferences") or {})
+            merged_dev.update(device_preferences)
+            patch["device_preferences"] = merged_dev
+        updated = await self._users.update_preferences(user_id, patch)
+        return await self.get_smart_profile(user_id, updated_prefs=updated.preferences if updated else patch)
+
+    async def get_smart_profile(self, user_id: str, *, updated_prefs: dict | None = None) -> dict:
+        if updated_prefs is None:
+            user = await self._users.get_by_id(user_id)
+            prefs = dict(user.preferences) if user else {}
+        else:
+            prefs = updated_prefs
+        return {
+            "language_preference": prefs.get("language_preference", "auto"),
+            "frequent_actions": dict(prefs.get("frequent_actions") or {}),
+            "personalized_workflows": list(prefs.get("personalized_workflows") or []),
+            "device_preferences": dict(prefs.get("device_preferences") or {}),
+            "voice_clone_hook": prefs.get("voice_clone_hook"),
+        }

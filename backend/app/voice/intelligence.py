@@ -11,6 +11,7 @@ from typing import Any
 LANGUAGE_NAMES: dict[str, str] = {
     "en": "English",
     "hi": "Hindi",
+    "hinglish": "Hinglish",
     "bn": "Bengali",
     "ta": "Tamil",
     "te": "Telugu",
@@ -27,6 +28,7 @@ LANGUAGE_NAMES: dict[str, str] = {
 SAME_LANGUAGE_GREETINGS: dict[str, str] = {
     "en": "Understood",
     "hi": "जी बिल्कुल",
+    "hinglish": "Haan bilkul",
     "bn": "নিশ্চয়ই",
     "ta": "சரி",
     "te": "సరే",
@@ -39,6 +41,12 @@ SAME_LANGUAGE_GREETINGS: dict[str, str] = {
     "or": "ନିଶ୍ଚିତ ଭାବରେ",
     "as": "নিশ্চয়",
 }
+
+HINGLISH_MARKERS = frozenset({
+    "bhai", "yaar", "kya", "kaise", "kaisa", "aaj", "kal", "mujhe", "mera", "meri",
+    "batao", "karo", "karna", "chahiye", "hai", "hain", "haan", "nahi", "samjhao",
+    "kholo", "dikhao", "plz", "theek",
+})
 
 
 def detect_voice_language(text: str) -> tuple[str, str]:
@@ -79,6 +87,11 @@ def detect_voice_language(text: str) -> tuple[str, str]:
         if any(m in cleaned for m in marathi_markers):
             return "mr", LANGUAGE_NAMES["mr"]
         return "hi", LANGUAGE_NAMES["hi"]
+
+    # Hinglish code-switched Latin heuristic before English fallback
+    tokens = {tok for tok in re.findall(r"[a-zA-Z]+", cleaned.lower())}
+    if len(tokens & HINGLISH_MARKERS) >= 2:
+        return "hinglish", LANGUAGE_NAMES["hinglish"]
 
     try:
         from aspirant.personality.language import detect_language

@@ -35,16 +35,18 @@ export default function MjPage() {
               <BrandMark product="mj" size={44} />
               <div>
                 <h2 className="text-lg font-bold">MJ Human-Like Intelligence</h2>
-                <p className="text-xs text-slate-400">
-                  Persistent Memory • Goal Milestones • Deep Research • Email &amp; Calendar Intelligence
+                <p className="text-xs text-adaptive-muted">
+                  Persistent Memory &bull; Goal Milestones &bull; Deep Research &bull; Email &amp; Calendar Intelligence
                 </p>
               </div>
             </div>
-            <p className="mt-4 rounded-xl border border-white/10 bg-white/[0.03] p-3 text-xs text-slate-200">
+            <p className="surface-card mt-4 rounded-xl p-3 text-xs text-adaptive-body">
               {reply}
             </p>
             <div className="mt-4">
-              <AgentPipelineView selectedAgents={["research", "planning", "content", "productivity"]} />
+              <AgentPipelineView
+                selectedAgents={["research", "planning", "content", "productivity"]}
+              />
             </div>
           </GlassCard>
         </div>
