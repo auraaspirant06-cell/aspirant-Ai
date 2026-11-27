@@ -7,11 +7,12 @@ import json
 import secrets
 from typing import Any
 
-from fastapi import FastAPI, HTTPException, Query, WebSocket, WebSocketDisconnect, status
+from fastapi import Body, FastAPI, HTTPException, Query, WebSocket, WebSocketDisconnect, status
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
 from aspirant import APP_NAME, __version__
+from aspirant.core.telemetry import invalidate_audio_cache
 from aspirant.personality.language_detect import SUPPORTED_LANGUAGES
 from aspirant.personality.personas import PERSONAS
 from aspirant.providers.base import ProviderError
@@ -76,6 +77,19 @@ class VoiceTurnRequest(BaseModel):
     transcript: str
     provider_id: str = "auto"
     speak_output: bool = True
+
+
+class VoiceChangeMicRequest(BaseModel):
+    device_index: int
+
+
+class VoiceTestMicRequest(BaseModel):
+    device_index: int | None = None
+    samples: list[float] | None = None
+
+
+class VoiceMuteRequest(BaseModel):
+    muted: bool
 
 
 class ApprovalDecisionRequest(BaseModel):
@@ -315,6 +329,48 @@ def register_routes(app: FastAPI, auth_dependency: Any) -> None:
     @app.get("/api/v1/voice/status", dependencies=[auth_dependency])
     async def voice_status() -> dict[str, Any]:
         return app.state.container.voice.status()
+
+    @app.post("/api/v1/voice/mute", dependencies=[auth_dependency])
+    async def voice_mute(body: VoiceMuteRequest) -> dict[str, Any]:
+        return app.state.container.voice.set_muted(body.muted)
+
+    @app.get("/api/v1/voice/diagnostics/devices", dependencies=[auth_dependency])
+    async def voice_diagnostics_devices() -> dict[str, Any]:
+        mgr = app.state.container.voice.diagnostics
+        invalidate_audio_cache()
+        return await asyncio.to_thread(mgr.discover)
+
+    @app.post("/api/v1/voice/diagnostics/test-mic", dependencies=[auth_dependency])
+    async def voice_diagnostics_test_mic(
+        body: VoiceTestMicRequest | list[float] | None = Body(default=None),
+    ) -> dict[str, Any]:
+        mgr = app.state.container.voice.diagnostics
+        dev_idx: int | None = None
+        samples: list[float] | None = None
+        if isinstance(body, list):
+            samples = body or None
+        elif isinstance(body, VoiceTestMicRequest):
+            dev_idx = body.device_index
+            samples = body.samples or None
+        result = await asyncio.to_thread(
+            mgr.test_microphone, device_index=dev_idx, samples=samples
+        )
+        invalidate_audio_cache()
+        return result
+
+    @app.post("/api/v1/voice/diagnostics/change-mic", dependencies=[auth_dependency])
+    async def voice_diagnostics_change_mic(body: VoiceChangeMicRequest) -> dict[str, Any]:
+        mgr = app.state.container.voice.diagnostics
+        res = await asyncio.to_thread(mgr.change_microphone, body.device_index)
+        invalidate_audio_cache()
+        return res
+
+    @app.post("/api/v1/voice/diagnostics/recover", dependencies=[auth_dependency])
+    async def voice_diagnostics_recover() -> dict[str, Any]:
+        mgr = app.state.container.voice.diagnostics
+        res = await asyncio.to_thread(mgr.recover)
+        invalidate_audio_cache()
+        return res
 
     @app.post("/api/v1/voice/config", dependencies=[auth_dependency])
     async def voice_config(body: VoiceConfigUpdateRequest) -> dict[str, Any]:

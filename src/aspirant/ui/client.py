@@ -81,6 +81,34 @@ class AspirantApiClient:
     def get_voice_status(self) -> dict[str, Any]:
         return self._request("GET", "/api/v1/voice/status")
 
+    def get_mic_devices(self) -> dict[str, Any]:
+        return self._request("GET", "/api/v1/voice/diagnostics/devices")
+
+    def test_microphone(
+        self,
+        device_index: int | None = None,
+        samples: list[float] | None = None,
+    ) -> dict[str, Any]:
+        payload: dict[str, Any] = {}
+        if device_index is not None:
+            payload["device_index"] = device_index
+        if samples:
+            payload["samples"] = samples
+        return self._request("POST", "/api/v1/voice/diagnostics/test-mic", json=payload)
+
+    def change_microphone(self, device_index: int) -> dict[str, Any]:
+        return self._request(
+            "POST",
+            "/api/v1/voice/diagnostics/change-mic",
+            json={"device_index": device_index},
+        )
+
+    def recover_microphone(self) -> dict[str, Any]:
+        return self._request("POST", "/api/v1/voice/diagnostics/recover")
+
+    def set_voice_muted(self, muted: bool) -> dict[str, Any]:
+        return self._request("POST", "/api/v1/voice/mute", json={"muted": muted})
+
     def update_voice_config(self, **updates: Any) -> dict[str, Any]:
         return self._request("POST", "/api/v1/voice/config", json=updates)
 

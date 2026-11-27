@@ -29,7 +29,7 @@ def build_stylesheet() -> str:
     QMainWindow, QWidget#RootWindow {{
         background-color: {PALETTE['bg_canvas']};
         color: {PALETTE['text_primary']};
-        font-family: "Segoe UI", "Arial", sans-serif;
+        font-family: "Segoe UI", "Segoe UI Emoji", "Segoe UI Symbol", "Arial", sans-serif;
         font-size: 13px;
     }}
 
@@ -109,35 +109,23 @@ def build_stylesheet() -> str:
     }}
 
     QPushButton[nav="true"]:checked {{
-        background: qlineargradient(
-            x1:0, y1:0, x2:1, y2:0,
-            stop:0 rgba(124, 58, 237, 0.34),
-            stop:1 rgba(59, 130, 246, 0.22)
-        );
+        background-color: qlineargradient(x1:0, y1:0, x2:1, y2:0, stop:0 rgba(124, 58, 237, 0.34), stop:1 rgba(59, 130, 246, 0.22));
         color: #FFFFFF;
         font-weight: 600;
         border: 1px solid rgba(34, 211, 238, 0.42);
     }}
 
     QPushButton[variant="primary"] {{
-        background: qlineargradient(
-            x1:0, y1:0, x2:1, y2:0,
-            stop:0 {PALETTE['purple']},
-            stop:1 {PALETTE['blue']}
-        );
+        background-color: qlineargradient(x1:0, y1:0, x2:1, y2:0, stop:0 {PALETTE['purple']}, stop:1 {PALETTE['blue']});
         color: #FFFFFF;
-        border: none;
+        border: 1px solid rgba(139, 92, 246, 0.55);
         border-radius: 9px;
         padding: 8px 16px;
         font-weight: 600;
     }}
 
     QPushButton[variant="primary"]:hover {{
-        background: qlineargradient(
-            x1:0, y1:0, x2:1, y2:0,
-            stop:0 {PALETTE['purple_bright']},
-            stop:1 #60A5FA
-        );
+        background-color: qlineargradient(x1:0, y1:0, x2:1, y2:0, stop:0 {PALETTE['purple_bright']}, stop:1 #60A5FA);
     }}
 
     QPushButton[variant="danger"] {{
@@ -257,7 +245,9 @@ def build_stylesheet() -> str:
 
     QScrollArea,
     QScrollArea > QWidget,
-    QScrollArea > QWidget > QWidget {{
+    QScrollArea > QWidget > QWidget,
+    QWidget#ScrollContent,
+    QWidget#NavContainer {{
         border: none;
         background-color: transparent;
     }}

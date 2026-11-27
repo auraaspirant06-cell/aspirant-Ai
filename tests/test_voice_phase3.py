@@ -205,3 +205,150 @@ async def test_gemini_live_config_and_gemini_first_tts_routing() -> None:
     router.update_gemini_key("")
     res2 = await router.synthesize("Hello", "en", VoiceConfig(tts_provider="auto"), allow_cloud=True)
     assert res2.provider == "edge-tts"
+
+
+def test_desktop_microphone_classification_ranking_and_api_endpoints(tmp_path: Path) -> None:
+    from aspirant.ui.app_window import AspirantMainWindow
+    from aspirant.ui.views.voice_view import MicSetupWizard
+    from aspirant.voice.diagnostics import (
+        auto_select_best_microphone,
+        classify_device_type,
+        clean_device_display_name,
+    )
+
+    # 1. Classification across USB, Bluetooth, Laptop Integrated, and Virtual
+    assert classify_device_type("Blue Yeti USB Microphone", "Windows WASAPI") == "usb"
+    assert (
+        classify_device_type(
+            "Headset (@System32\\drivers\\bthhfenum.sys,#2;%1 Hands-Free%0\r\n;(AirBass Headphone))",
+            "Windows WDM-KS",
+        )
+        == "bluetooth"
+    )
+    assert (
+        classify_device_type(
+            "Microphone Array (Intel® Smart Sound Technology for Digital Microphones)",
+            "Windows WASAPI",
+        )
+        == "integrated"
+    )
+    assert classify_device_type("Stereo Mix (Realtek(R) Audio)", "Windows WASAPI") == "virtual"
+    assert classify_device_type("Microsoft Sound Mapper - Input", "MME") == "virtual"
+    assert (
+        clean_device_display_name(
+            "Headset (@System32\\drivers\\bthhfenum.sys,#2;%1 Hands-Free%0\r\n;(AirBass Headphone))",
+            "Windows WDM-KS",
+        )
+        == "AirBass Headphone (Bluetooth Hands-Free) (WDM-KS)"
+    )
+
+    # 2. Best microphone selection: usable non-WDM-KS physical mics beat WDM-KS standby & virtual
+    candidates = [
+        {"index": 0, "name": "Stereo Mix", "device_type": "virtual", "hostapi": "Windows WASAPI", "usable": True},
+        {"index": 1, "name": "Offline BT WDM", "device_type": "bluetooth", "hostapi": "Windows WDM-KS", "usable": False},
+        {"index": 2, "name": "Microphone Array", "device_type": "integrated", "hostapi": "Windows WASAPI", "usable": True},
+        {"index": 3, "name": "Active BT Headset", "device_type": "bluetooth", "hostapi": "MME", "usable": True},
+        {"index": 4, "name": "Studio USB Mic", "device_type": "usb", "hostapi": "Windows WASAPI", "usable": True},
+    ]
+    assert auto_select_best_microphone(candidates)["index"] == 4
+    assert auto_select_best_microphone(candidates[:-1])["index"] == 3
+    assert auto_select_best_microphone(candidates[:3])["index"] == 2
+    assert auto_select_best_microphone(candidates[:2])["index"] == 0
+
+    # 3. Desktop FastAPI mic diagnostics, test, change, mute, recover endpoints
+    settings = AppSettings(ASPIRANT_DATA_DIR=tmp_path / "data")
+    container = build_container(settings)
+    app = create_app(settings=settings, container=container)
+    headers = {"Authorization": f"Bearer {container.api_token}"}
+
+    with TestClient(app) as client:
+        devs = client.get("/api/v1/voice/diagnostics/devices", headers=headers)
+        assert devs.status_code == 200
+        djson = devs.json()
+        assert {"mic_available", "mic_status", "input_devices", "permission", "repair_guidance"}.issubset(djson)
+
+        t_ok = client.post(
+            "/api/v1/voice/diagnostics/test-mic",
+            headers=headers,
+            json={"samples": [0.1, -0.1, 0.12, -0.08] * 8},
+        )
+        assert t_ok.status_code == 200 and t_ok.json()["signal_quality"] == "ok"
+
+        t_mute = client.post(
+            "/api/v1/voice/diagnostics/test-mic",
+            headers=headers,
+            json=[0.0, 0.0, 0.0, 0.0] * 4,
+        )
+        assert t_mute.status_code == 200 and t_mute.json()["signal_quality"] == "muted"
+
+        muted = client.post("/api/v1/voice/mute", headers=headers, json={"muted": True})
+        assert muted.status_code == 200 and muted.json()["muted"] is True
+        unmuted = client.post("/api/v1/voice/mute", headers=headers, json={"muted": False})
+        assert unmuted.status_code == 200 and unmuted.json()["muted"] is False
+
+        if djson["input_devices"]:
+            idx = djson["input_devices"][0]["index"]
+            ch = client.post("/api/v1/voice/diagnostics/change-mic", headers=headers, json={"device_index": idx})
+            assert ch.status_code == 200 and ch.json()["status"] == "changed"
+
+        rec = client.post("/api/v1/voice/diagnostics/recover", headers=headers)
+        assert rec.status_code == 200 and rec.json()["status"] in {"recovered", "no_devices"}
+
+    # 4. PySide6 UI widgets: VoiceControlDashboard, MicDiagnosticsPanel, TopBar recovery, MicSetupWizard
+    qt = QApplication.instance() or QApplication([])
+    view = VoiceAssistantView(api_client=None)  # type: ignore[arg-type]
+    view.voice_dashboard.update_status({
+        "mic_connected": True,
+        "listening_mode": "listening",
+        "wake_word_armed": True,
+        "asr_status": "ready",
+        "vad_active": True,
+        "voice_activity_percent": 62,
+        "rms_db": -28.0,
+        "noise_suppression_on": True,
+        "current_device_name": "Studio USB Mic",
+        "current_device_type": "usb",
+    })
+    assert "CONNECTED" in view.voice_dashboard.conn_badge.text() or "Connected" in view.voice_dashboard.conn_badge.text()
+    assert view.voice_dashboard.vad_meter.value() == 62
+    view.mic_panel._on_devices({
+        "mic_available": False,
+        "input_devices": [],
+        "issues_detected": ["No active mic"],
+        "repair_guidance": ["Reconnect Microphone"],
+        "permission": {"granted": True},
+    })
+    assert "NOT FOUND" in view.mic_panel.status_pill.text()
+    view.mic_panel._on_recover({
+        "status": "recovered",
+        "device": {
+            "index": 9,
+            "display_name": "Microphone Array (WASAPI)",
+            "device_type": "integrated",
+            "driver_status": "Available (Windows WASAPI)",
+            "default_samplerate": 48000,
+        },
+        "steps_attempted": ["1. Rescanning", "4. Connected"],
+    })
+    assert "CONNECTED" in view.mic_panel.status_pill.text()
+    view.shutdown()
+
+    wiz = MicSetupWizard(api_client=None, auto_run=False)  # type: ignore[arg-type]
+    wiz._run_auto_check()
+    assert "Permission:" in wiz.perm_lbl.text()
+    wiz.close()
+
+    class _StubClient:
+        def get_overview(self): return {"telemetry": {"audio": {}}, "security": {}, "voice": {}}
+        def get_audit_logs(self, **_kw): return {"items": []}
+        def recover_microphone(self): return {"status": "no_devices"}
+    win = AspirantMainWindow(api_client=_StubClient())  # type: ignore[arg-type]
+    win._apply_top_mic_status(False, "")
+    assert "NOT FOUND" in win.top_mic_pill.text()
+    win._on_mic_recovered({
+        "status": "recovered",
+        "device": {"display_name": "Microphone Array", "device_type": "integrated"},
+    })
+    assert "CONNECTED" in win.top_mic_pill.text()
+    win.close()
+    qt.processEvents()

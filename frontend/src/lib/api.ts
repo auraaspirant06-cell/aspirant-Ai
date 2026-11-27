@@ -33,13 +33,77 @@ export interface VoicePipelineResponse {
   remembered_language?: string;
 }
 
+export interface MicDeviceInfo {
+  index: number;
+  name: string;
+  display_name?: string;
+  device_type: string;
+  hostapi?: string;
+  default_samplerate: number;
+  supported_sample_rates?: number[];
+  driver_status: string;
+  usable?: boolean;
+  is_default: boolean;
+  is_selected?: boolean;
+}
+
 export interface AudioDiagnosticsResponse {
   mic_available: boolean;
-  input_devices: Array<{ index: number; name: string; default_samplerate: number }>;
+  mic_status?: string;
+  permission?: {
+    granted: boolean;
+    status: string;
+    detail: string;
+    settings_uri?: string;
+  };
+  input_devices: MicDeviceInfo[];
   output_devices: Array<{ index: number; name: string; default_samplerate: number }>;
+  best_device: MicDeviceInfo | null;
+  active_device?: MicDeviceInfo | null;
   health_status: string;
   issues_detected: string[];
   repair_guidance: string[];
+}
+
+export interface MicTestResponse {
+  rms_level: number;
+  peak_level?: number;
+  db_level?: number;
+  volume_percent?: number;
+  used_sample_rate?: number;
+  signal_quality: "ok" | "quiet_ready" | "muted" | "clipping" | "unavailable" | "unknown";
+  device_opened?: boolean;
+  mic_available: boolean;
+  best_device: { name: string; display_name?: string; device_type: string; default_samplerate?: number } | null;
+  issues: string[];
+  guidance: string[];
+}
+
+export interface VoiceStatusResponse {
+  listening_mode: string;
+  wake_word_armed: boolean;
+  asr_status: string;
+  vad_active: boolean;
+  voice_activity_percent?: number;
+  noise_suppression_on: boolean;
+  muted?: boolean;
+  mic_connected: boolean;
+  mic_status?: string;
+  current_device_index?: number | null;
+  current_device_name: string;
+  current_device_type: string;
+  driver_status?: string;
+  sample_rate?: number;
+  health_status: string;
+  issues: string[];
+}
+
+export interface MicRecoverResponse {
+  status: "recovered" | "no_devices";
+  mic_status?: string;
+  device: MicDeviceInfo | null;
+  steps_attempted?: string[];
+  error?: string;
 }
 
 export interface SelfHealReport {
@@ -170,6 +234,30 @@ export const ecosystemApi = {
       { method: "GET" },
       token
     ),
+  voiceDiagnosticsDevices: (token: string) =>
+    requestJson<AudioDiagnosticsResponse>("/voice/diagnostics/devices", { method: "GET" }, token),
+  voiceTestMic: (token: string, body: { device_index?: number; samples?: number[] } = {}) =>
+    requestJson<MicTestResponse>(
+      "/voice/diagnostics/test-mic",
+      { method: "POST", body: JSON.stringify(body) },
+      token
+    ),
+  voiceChangeMic: (token: string, deviceIndex: number) =>
+    requestJson<AudioDiagnosticsResponse & { status: string; active_device_name: string }>(
+      "/voice/diagnostics/change-mic",
+      { method: "POST", body: JSON.stringify({ device_index: deviceIndex }) },
+      token
+    ),
+  voiceRecoverMic: (token: string) =>
+    requestJson<MicRecoverResponse>("/voice/diagnostics/recover", { method: "POST" }, token),
+  voiceMute: (token: string, muted: boolean) =>
+    requestJson<VoiceStatusResponse>(
+      "/voice/mute",
+      { method: "POST", body: JSON.stringify({ muted }) },
+      token
+    ),
+  voiceStatus: (token: string) =>
+    requestJson<VoiceStatusResponse>("/voice/status", { method: "GET" }, token),
   integrationsCatalog: (token: string) =>
     requestJson<{
       connectors: Array<{

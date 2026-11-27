@@ -1373,6 +1373,253 @@
         ]
       }
     },
+    "/api/v1/voice/diagnostics/devices": {
+      "get": {
+        "tags": [
+          "Voice Intelligence & Identity"
+        ],
+        "summary": "List Audio Devices",
+        "description": "Full enumerated device list with type, driver status, permissions, and selected best mic.",
+        "operationId": "list_audio_devices_api_v1_voice_diagnostics_devices_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response List Audio Devices Api V1 Voice Diagnostics Devices Get"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/voice/diagnostics/test-mic": {
+      "post": {
+        "tags": [
+          "Voice Intelligence & Identity"
+        ],
+        "summary": "Test Microphone",
+        "description": "Run live capture RMS test or evaluate supplied test samples.",
+        "operationId": "test_microphone_api_v1_voice_diagnostics_test_mic_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/TestMicRequest"
+                  },
+                  {
+                    "items": {
+                      "type": "number"
+                    },
+                    "type": "array"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Body"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response Test Microphone Api V1 Voice Diagnostics Test Mic Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/voice/diagnostics/change-mic": {
+      "post": {
+        "tags": [
+          "Voice Intelligence & Identity"
+        ],
+        "summary": "Change Microphone",
+        "description": "Switch and persist the active microphone device index.",
+        "operationId": "change_microphone_api_v1_voice_diagnostics_change_mic_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChangeMicRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response Change Microphone Api V1 Voice Diagnostics Change Mic Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/voice/diagnostics/recover": {
+      "post": {
+        "tags": [
+          "Voice Intelligence & Identity"
+        ],
+        "summary": "Recover Microphone",
+        "description": "Auto-recovery: rescan audio subsystem, try alternates, reconnect default/best mic.",
+        "operationId": "recover_microphone_api_v1_voice_diagnostics_recover_post",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response Recover Microphone Api V1 Voice Diagnostics Recover Post"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/voice/mute": {
+      "post": {
+        "tags": [
+          "Voice Intelligence & Identity"
+        ],
+        "summary": "Set Voice Mute",
+        "description": "Toggle muted state reflected on the voice control dashboard.",
+        "operationId": "set_voice_mute_api_v1_voice_mute_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VoiceMuteRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response Set Voice Mute Api V1 Voice Mute Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/voice/status": {
+      "get": {
+        "tags": [
+          "Voice Intelligence & Identity"
+        ],
+        "summary": "Voice Status",
+        "description": "Live voice dashboard status: mic, listening mode, ASR, VAD, noise suppression.",
+        "operationId": "voice_status_api_v1_voice_status_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response Voice Status Api V1 Voice Status Get"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
     "/api/v1/voice/clone/hook": {
       "post": {
         "tags": [
@@ -3122,6 +3369,20 @@
         "type": "object",
         "title": "CalendarAnalyzeRequest"
       },
+      "ChangeMicRequest": {
+        "properties": {
+          "device_index": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Device Index"
+          }
+        },
+        "type": "object",
+        "required": [
+          "device_index"
+        ],
+        "title": "ChangeMicRequest"
+      },
       "ClipboardRequest": {
         "properties": {
           "content": {
@@ -3929,6 +4190,37 @@
         ],
         "title": "SearchFilesRequest"
       },
+      "TestMicRequest": {
+        "properties": {
+          "device_index": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Device Index"
+          },
+          "samples": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "number"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Samples"
+          }
+        },
+        "type": "object",
+        "title": "TestMicRequest"
+      },
       "ValidationError": {
         "properties": {
           "loc": {
@@ -4055,6 +4347,19 @@
           "samples"
         ],
         "title": "VoiceEnrollRequest"
+      },
+      "VoiceMuteRequest": {
+        "properties": {
+          "muted": {
+            "type": "boolean",
+            "title": "Muted"
+          }
+        },
+        "type": "object",
+        "required": [
+          "muted"
+        ],
+        "title": "VoiceMuteRequest"
       },
       "VoicePreviewRequest": {
         "properties": {

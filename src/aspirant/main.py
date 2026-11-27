@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from pathlib import Path
 import socket
 import sys
 import threading
@@ -9,6 +10,7 @@ import time
 
 import httpx
 from PySide6.QtCore import Qt
+from PySide6.QtGui import QFont, QFontDatabase
 from PySide6.QtWidgets import QApplication
 import uvicorn
 
@@ -63,6 +65,15 @@ def main() -> int:
     )
     qt_app = QApplication.instance() or QApplication(sys.argv)
     qt_app.setApplicationName(APP_NAME)
+    for font_file in (
+        r"C:\Windows\Fonts\segoeui.ttf",
+        r"C:\Windows\Fonts\seguiemj.ttf",
+        r"C:\Windows\Fonts\seguisym.ttf",
+    ):
+        if Path(font_file).exists():
+            QFontDatabase.addApplicationFont(font_file)
+    QFont.insertSubstitutions("Segoe UI", ["Segoe UI Emoji", "Segoe UI Symbol"])
+    qt_app.setFont(QFont("Segoe UI", 10))
     client = AspirantApiClient(base_url=base_url, api_token=container.api_token)
     window = AspirantMainWindow(api_client=client)
     window.show()

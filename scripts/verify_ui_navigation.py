@@ -68,14 +68,16 @@ def audit_desktop_pyside6() -> dict:
         Qt.HighDpiScaleFactorRoundingPolicy.PassThrough
     )
     app = QApplication.instance() or QApplication([])
-    for font_file in (r"C:\Windows\Fonts\segoeui.ttf", r"C:\Windows\Fonts\segoeuib.ttf", r"C:\Windows\Fonts\arial.ttf"):
+    for font_file in (
+        r"C:\Windows\Fonts\segoeui.ttf",
+        r"C:\Windows\Fonts\seguiemj.ttf",
+        r"C:\Windows\Fonts\seguisym.ttf",
+        r"C:\Windows\Fonts\arial.ttf",
+    ):
         if Path(font_file).exists():
-            font_id = QFontDatabase.addApplicationFont(font_file)
-            if font_id >= 0:
-                fams = QFontDatabase.applicationFontFamilies(font_id)
-                if fams:
-                    app.setFont(QFont(fams[0], 10))
-                    break
+            QFontDatabase.addApplicationFont(font_file)
+    QFont.insertSubstitutions("Segoe UI", ["Segoe UI Emoji", "Segoe UI Symbol"])
+    app.setFont(QFont("Segoe UI", 10))
     SCREENSHOT_DIR.mkdir(parents=True, exist_ok=True)
 
     win = AspirantMainWindow(api_client=AspirantApiClient("http://127.0.0.1:1", "test-token"))

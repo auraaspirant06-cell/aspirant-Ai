@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import json
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Body, Depends, HTTPException, Query, status
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -12,7 +12,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from backend.app.api.deps import AuthenticatedPrincipal, get_container, get_current_user, get_db_session
 from backend.app.core.container import EcosystemContainer
 from backend.app.domain.entities import ProductSource
-from backend.app.voice.diagnostics import diagnose_audio_devices
+from backend.app.voice.diagnostics import (
+    diagnose_audio_devices,
+    get_diagnostics_manager,
+    reinitialize_audio_subsystem,
+)
 from backend.app.voice.intelligence import (
     LANGUAGE_NAMES,
     SAME_LANGUAGE_GREETINGS,
@@ -98,6 +102,116 @@ async def audio_diagnostics_with_samples(
     principal: AuthenticatedPrincipal = Depends(get_current_user),
 ) -> dict:
     return diagnose_audio_devices(test_samples=samples)
+
+
+# ---------------------------------------------------------------------------
+# New Mic Diagnostics Endpoints
+# ---------------------------------------------------------------------------
+
+
+class ChangeMicRequest(BaseModel):
+    device_index: int = Field(ge=0)
+
+
+class TestMicRequest(BaseModel):
+    device_index: int | None = None
+    samples: list[float] | None = None
+
+
+class VoiceMuteRequest(BaseModel):
+    muted: bool
+
+
+_VOICE_RUNTIME_STATE = {
+    "listening_mode": "idle",
+    "wake_word_armed": False,
+    "noise_suppression_on": True,
+    "muted": False,
+}
+
+
+@router.get("/diagnostics/devices")
+async def list_audio_devices(
+    principal: AuthenticatedPrincipal = Depends(get_current_user),
+) -> dict:
+    """Full enumerated device list with type, driver status, permissions, and selected best mic."""
+    return get_diagnostics_manager().discover()
+
+
+@router.post("/diagnostics/test-mic")
+async def test_microphone(
+    body: TestMicRequest | list[float] | None = Body(default=None),
+    principal: AuthenticatedPrincipal = Depends(get_current_user),
+) -> dict:
+    """Run live capture RMS test or evaluate supplied test samples."""
+    dev_idx: int | None = None
+    samples: list[float] | None = None
+    if isinstance(body, list):
+        samples = body or None
+    elif isinstance(body, TestMicRequest):
+        dev_idx = body.device_index
+        samples = body.samples or None
+    return get_diagnostics_manager().test_microphone(device_index=dev_idx, samples=samples)
+
+
+@router.post("/diagnostics/change-mic")
+async def change_microphone(
+    body: ChangeMicRequest,
+    principal: AuthenticatedPrincipal = Depends(get_current_user),
+) -> dict:
+    """Switch and persist the active microphone device index."""
+    return get_diagnostics_manager().change_microphone(body.device_index)
+
+
+@router.post("/diagnostics/recover")
+async def recover_microphone(
+    principal: AuthenticatedPrincipal = Depends(get_current_user),
+) -> dict:
+    """Auto-recovery: rescan audio subsystem, try alternates, reconnect default/best mic."""
+    return reinitialize_audio_subsystem()
+
+
+@router.post("/mute")
+async def set_voice_mute(
+    body: VoiceMuteRequest,
+    principal: AuthenticatedPrincipal = Depends(get_current_user),
+) -> dict:
+    """Toggle muted state reflected on the voice control dashboard."""
+    _VOICE_RUNTIME_STATE["muted"] = body.muted
+    return await voice_status(principal=principal)
+
+
+@router.get("/status")
+async def voice_status(
+    principal: AuthenticatedPrincipal = Depends(get_current_user),
+) -> dict:
+    """Live voice dashboard status: mic, listening mode, ASR, VAD, noise suppression."""
+    mgr = get_diagnostics_manager()
+    diag = mgr.discover()
+    mic_connected = bool(diag["mic_available"])
+    active = diag.get("active_device") or diag.get("best_device")
+    muted = bool(_VOICE_RUNTIME_STATE["muted"])
+    last_test = diag.get("last_test_result") or {}
+    return {
+        "listening_mode": "muted" if muted else _VOICE_RUNTIME_STATE["listening_mode"],
+        "wake_word_armed": bool(_VOICE_RUNTIME_STATE["wake_word_armed"]),
+        "asr_status": "muted" if muted else ("ready" if mic_connected else "unavailable"),
+        "vad_active": False,
+        "voice_activity_percent": int(last_test.get("volume_percent", 0)),
+        "noise_suppression_on": bool(_VOICE_RUNTIME_STATE["noise_suppression_on"]),
+        "muted": muted,
+        "mic_connected": mic_connected,
+        "mic_status": "MIC: CONNECTED" if mic_connected else "MIC: NOT FOUND",
+        "current_device_index": active["index"] if active else None,
+        "current_device_name": (active.get("display_name") or active["name"]) if active else "None",
+        "current_device_type": active["device_type"] if active else "unknown",
+        "driver_status": active.get("driver_status", "Unavailable") if active else "Unavailable",
+        "sample_rate": int(active.get("default_samplerate", 0)) if active else 0,
+        "permission": diag.get("permission", {}),
+        "last_test_result": last_test or None,
+        "health_status": diag["health_status"],
+        "issues": diag["issues_detected"],
+    }
 
 
 @router.post("/clone/hook")

@@ -43,11 +43,10 @@ class HomeDashboardView(QWidget):
         scroll.setWidgetResizable(True)
         scroll.setFrameShape(scroll.Shape.NoFrame)
         scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
-        scroll.viewport().setStyleSheet("background: transparent;")
         outer.addWidget(scroll)
 
         container = QWidget()
-        container.setStyleSheet("background: transparent;")
+        container.setObjectName("ScrollContent")
         scroll.setWidget(container)
         self.root_layout = QVBoxLayout(container)
         self.root_layout.setContentsMargins(24, 20, 24, 24)
@@ -215,9 +214,11 @@ class HomeDashboardView(QWidget):
         audio = telemetry.get("audio", {})
         mic_ok = bool(audio.get("mic_available", False))
         spk_ok = bool(audio.get("speaker_available", False))
+        active_mic = str(audio.get("active_device_name") or "").strip()
+        mic_desc = f"🟢 {active_mic}" if (mic_ok and active_mic and active_mic != "None") else ("🟢 Detected" if mic_ok else "🔴 Recovery Pending")
         self.mic_status_lbl.setText(
-            f"Audio Hardware: Mic {'Detected' if mic_ok else 'Missing'} ({audio.get('mic_count', 0)}) • "
-            f"Speaker {'Detected' if spk_ok else 'Missing'} ({audio.get('speaker_count', 0)}) • Voice Pipeline: Phase 3"
+            f"Audio Hardware: Mic {mic_desc} ({audio.get('mic_count', 0)}) • "
+            f"Speaker {'Detected' if spk_ok else 'Missing'} ({audio.get('speaker_count', 0)})"
         )
 
         self.restricted_btn.setText(f"Restricted Mode: {'ON' if restricted else 'OFF'}")

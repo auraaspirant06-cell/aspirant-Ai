@@ -1,32 +1,87 @@
-"""System resource and hardware readiness telemetry via psutil and WinMM."""
+"""System resource and hardware readiness telemetry via psutil, WinMM, and sounddevice."""
 
 from __future__ import annotations
 
 import ctypes
 import os
 import sys
+import threading
 import time
 from typing import Any
 
 import psutil
 
+from aspirant.voice.diagnostics import get_diagnostics_manager
 
-def probe_audio_devices() -> dict[str, Any]:
-    """Check audio input/output device counts without activating microphone capture."""
-    if sys.platform != "win32":
-        return {"mic_available": False, "speaker_available": False, "mic_count": 0, "speaker_count": 0}
+
+_CACHE_LOCK = threading.Lock()
+_AUDIO_CACHE: dict[str, Any] = {}
+_AUDIO_CACHE_AT: float = 0.0
+_AUDIO_CACHE_TTL_SEC = 4.0
+
+
+def invalidate_audio_cache() -> None:
+    """Force the next telemetry probe to refresh microphone/speaker hardware metadata."""
+    global _AUDIO_CACHE_AT
+    with _CACHE_LOCK:
+        _AUDIO_CACHE_AT = 0.0
+
+
+def probe_audio_devices(*, force_refresh: bool = False) -> dict[str, Any]:
+    """Check audio input/output devices & active mic without activating microphone capture."""
+    global _AUDIO_CACHE, _AUDIO_CACHE_AT
+    now = time.monotonic()
+    with _CACHE_LOCK:
+        if not force_refresh and _AUDIO_CACHE and (now - _AUDIO_CACHE_AT) < _AUDIO_CACHE_TTL_SEC:
+            return dict(_AUDIO_CACHE)
+
+    mgr = get_diagnostics_manager()
     try:
-        winmm = ctypes.windll.winmm
-        mic_count = int(winmm.waveInGetNumDevs())
-        spk_count = int(winmm.waveOutGetNumDevs())
-        return {
+        diag = mgr.discover()
+        active = diag.get("active_device") or diag.get("best_device") or {}
+        payload: dict[str, Any] = {
+            "mic_available": bool(diag.get("mic_available", False)),
+            "speaker_available": bool(diag.get("speaker_available", False)),
+            "mic_count": int(diag.get("mic_count", 0)),
+            "speaker_count": int(diag.get("speaker_count", 0)),
+            "mic_status": diag.get("mic_status", "NOT FOUND"),
+            "active_device_index": diag.get("active_device_index"),
+            "active_device_name": active.get("display_name") or active.get("name") or "None",
+            "active_device_type": active.get("device_type", "unknown"),
+            "driver_status": active.get("driver_status", "Unavailable"),
+            "sample_rate": int(active.get("default_samplerate", 16000)) if active else 0,
+            "permission_granted": bool(diag.get("permission", {}).get("granted", True)),
+            "issues_detected": diag.get("issues_detected", []),
+        }
+    except Exception:
+        if sys.platform == "win32":
+            try:
+                winmm = ctypes.windll.winmm
+                mic_count = int(winmm.waveInGetNumDevs())
+                spk_count = int(winmm.waveOutGetNumDevs())
+            except Exception:
+                mic_count, spk_count = 0, 0
+        else:
+            mic_count, spk_count = 0, 0
+        payload = {
             "mic_available": mic_count > 0,
             "speaker_available": spk_count > 0,
             "mic_count": mic_count,
             "speaker_count": spk_count,
+            "mic_status": "CONNECTED" if mic_count > 0 else "NOT FOUND",
+            "active_device_index": None,
+            "active_device_name": "Windows Default" if mic_count > 0 else "None",
+            "active_device_type": "unknown",
+            "driver_status": "WinMM fallback",
+            "sample_rate": 16000 if mic_count > 0 else 0,
+            "permission_granted": True,
+            "issues_detected": [],
         }
-    except Exception:
-        return {"mic_available": False, "speaker_available": False, "mic_count": 0, "speaker_count": 0}
+
+    with _CACHE_LOCK:
+        _AUDIO_CACHE = payload
+        _AUDIO_CACHE_AT = time.monotonic()
+    return dict(payload)
 
 
 class TelemetryCollector:

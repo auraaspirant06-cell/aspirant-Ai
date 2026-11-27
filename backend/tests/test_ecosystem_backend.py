@@ -608,3 +608,111 @@ def test_live_streaming_voice_presets_mic_windows_smart_memory_and_crash_recover
 
         rec = client.post("/api/v1/self-healing/recover", headers=headers)
         assert rec.status_code == 200 and rec.json()["status"] == "recovered"
+
+
+def test_microphone_detection_diagnostics_and_recovery(tmp_path: Path) -> None:
+    """Microphone detection, device enumeration, mic test, and auto-recovery endpoints."""
+    app = create_app(_make_settings(tmp_path))
+    with TestClient(app) as client:
+        _, headers = _register_and_headers(client, email="mic@aspirant.ai")
+
+        # GET /voice/diagnostics/devices — full device list (may be empty on CI/headless)
+        devices_res = client.get("/api/v1/voice/diagnostics/devices", headers=headers)
+        assert devices_res.status_code == 200
+        ddata = devices_res.json()
+        assert "mic_available" in ddata
+        assert "input_devices" in ddata
+        assert "output_devices" in ddata
+        assert "health_status" in ddata
+        assert "issues_detected" in ddata
+        assert "repair_guidance" in ddata
+        # best_device may be None on CI — that's fine
+        assert ddata["health_status"] in {"healthy", "attention_needed"}
+        # repair_guidance must always be non-empty (healthy guidance or repair tips)
+        assert isinstance(ddata["repair_guidance"], list) and len(ddata["repair_guidance"]) > 0
+
+        # POST /voice/diagnostics/test-mic with dict payload & raw array payload
+        samples = [0.05, -0.04, 0.06, -0.05] * 8
+        test_res = client.post(
+            "/api/v1/voice/diagnostics/test-mic",
+            headers=headers,
+            json={"samples": samples},
+        )
+        assert test_res.status_code == 200
+        tdata = test_res.json()
+        assert tdata["signal_quality"] in {"ok", "quiet_ready"}
+        assert isinstance(tdata["rms_level"], float)
+        assert "volume_percent" in tdata
+
+        # True muted (all zeros) vs quiet-room thermal floor
+        muted_res = client.post(
+            "/api/v1/voice/diagnostics/test-mic",
+            headers=headers,
+            json=[0.0, 0.0, 0.0, 0.0] * 4,
+        )
+        assert muted_res.status_code == 200
+        assert muted_res.json()["signal_quality"] == "muted"
+
+        quiet_res = client.post(
+            "/api/v1/voice/diagnostics/test-mic",
+            headers=headers,
+            json=[0.0001, -0.0001] * 16,
+        )
+        assert quiet_res.status_code == 200
+        assert quiet_res.json()["signal_quality"] in {"muted", "quiet_ready", "ok"}
+
+        if ddata["input_devices"]:
+            target_idx = ddata["input_devices"][0]["index"]
+            ch_res = client.post(
+                "/api/v1/voice/diagnostics/change-mic",
+                headers=headers,
+                json={"device_index": target_idx},
+            )
+            assert ch_res.status_code == 200 and ch_res.json()["status"] == "changed"
+
+        mute_res = client.post("/api/v1/voice/mute", headers=headers, json={"muted": True})
+        assert mute_res.status_code == 200 and mute_res.json()["muted"] is True
+        client.post("/api/v1/voice/mute", headers=headers, json={"muted": False})
+
+        # POST /voice/diagnostics/recover — auto-recovery (returned status must be a known value)
+        recover_res = client.post("/api/v1/voice/diagnostics/recover", headers=headers)
+        assert recover_res.status_code == 200
+        rdata = recover_res.json()
+        assert rdata["status"] in {"recovered", "no_devices"}
+        assert rdata["mic_status"] in {"MIC: CONNECTED", "MIC: NOT FOUND"}
+        if rdata["status"] == "recovered":
+            assert rdata["device"] is not None
+            assert "name" in rdata["device"]
+            assert "device_type" in rdata["device"]
+        else:
+            assert rdata["device"] is None or rdata["device"] == {}
+
+        # GET /voice/status — full voice dashboard status
+        status_res = client.get("/api/v1/voice/status", headers=headers)
+        assert status_res.status_code == 200
+        sdata = status_res.json()
+        required_fields = {
+            "listening_mode",
+            "wake_word_armed",
+            "asr_status",
+            "vad_active",
+            "voice_activity_percent",
+            "noise_suppression_on",
+            "muted",
+            "mic_connected",
+            "mic_status",
+            "current_device_name",
+            "current_device_type",
+            "driver_status",
+            "sample_rate",
+            "health_status",
+            "issues",
+        }
+        assert required_fields.issubset(sdata.keys())
+        assert isinstance(sdata["mic_connected"], bool)
+        assert isinstance(sdata["noise_suppression_on"], bool)
+        assert sdata["health_status"] in {"healthy", "attention_needed"}
+
+        # Confirm MIC NOT FOUND does NOT cause a 500 — always graceful
+        # (this is the core requirement: never permanent error without diagnostics)
+        assert status_res.status_code == 200  # already checked but make intent explicit

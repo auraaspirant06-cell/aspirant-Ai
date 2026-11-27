@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 from pathlib import Path
 from typing import Callable
 
@@ -59,10 +60,11 @@ NAV_SECTIONS: list[tuple[str, str, str]] = [
 
 
 class _PollWorker(QObject):
-    """Background worker fetching overview + audit logs without stalling Qt UI."""
+    """Background worker fetching overview + audit logs + auto mic recovery without stalling Qt UI."""
 
     data_ready = Signal(dict, list)
     health_ready = Signal(list, list)
+    recovery_ready = Signal(dict)
     failed = Signal(str)
 
     def __init__(self, client: AspirantApiClient) -> None:
@@ -78,6 +80,14 @@ class _PollWorker(QObject):
             self.data_ready.emit(overview, logs)
         except Exception as exc:
             self.failed.emit(str(exc))
+
+    @Slot()
+    def recover_mic(self) -> None:
+        try:
+            res = self.client.recover_microphone()
+            self.recovery_ready.emit(res)
+        except Exception as exc:
+            self.recovery_ready.emit({"status": "error", "error": str(exc)})
 
     @Slot()
     def fetch_health(self) -> None:
@@ -120,11 +130,13 @@ class AspirantMainWindow(QMainWindow):
 
     poll_requested = Signal()
     health_requested = Signal()
+    mic_recover_requested = Signal()
 
     def __init__(self, api_client: AspirantApiClient, parent: QWidget | None = None) -> None:
         super().__init__(parent)
         self.api_client = api_client
         self._audit_category = "all"
+        self._auto_recovery_triggered = False
 
         self.setWindowTitle(f"{APP_NAME} v{__version__}")
         self.setWindowIcon(_create_app_icon())
@@ -165,9 +177,8 @@ class AspirantMainWindow(QMainWindow):
         nav_scroll.setWidgetResizable(True)
         nav_scroll.setFrameShape(QFrame.Shape.NoFrame)
         nav_scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
-        nav_scroll.viewport().setStyleSheet("background: transparent;")
         nav_container = QWidget()
-        nav_container.setStyleSheet("background: transparent;")
+        nav_container.setObjectName("NavContainer")
         nav_layout = QVBoxLayout(nav_container)
         nav_layout.setContentsMargins(0, 0, 2, 0)
         nav_layout.setSpacing(3)
@@ -248,16 +259,23 @@ class AspirantMainWindow(QMainWindow):
         self._poll_worker.moveToThread(self._poll_thread)
         self.poll_requested.connect(self._poll_worker.fetch)
         self.health_requested.connect(self._poll_worker.fetch_health)
+        self.mic_recover_requested.connect(self._poll_worker.recover_mic)
         self._poll_worker.data_ready.connect(self._on_backend_data)
         self._poll_worker.health_ready.connect(self.models_view.update_health_and_usage)
+        self._poll_worker.recovery_ready.connect(self._on_mic_recovered)
         self._poll_worker.failed.connect(self._on_backend_error)
         self._poll_thread.start()
+
+        self.voice_view.mic_state_propagated.connect(self._apply_top_mic_status)
 
         self._poll_timer = QTimer(self)
         self._poll_timer.setInterval(2000)
         self._poll_timer.timeout.connect(self._request_poll)
         self._poll_timer.start()
         QTimer.singleShot(50, self._request_poll)
+
+        if os.environ.get("QT_QPA_PLATFORM") != "offscreen":
+            QTimer.singleShot(900, self.maybe_run_first_launch_wizard)
 
         self._init_tray()
 
@@ -347,17 +365,54 @@ class AspirantMainWindow(QMainWindow):
         self._poll_worker.category = self._audit_category
         self.poll_requested.emit()
 
+    def maybe_run_first_launch_wizard(self) -> None:
+        from aspirant.ui.views.voice_view import _FIRST_LAUNCH_FLAG  # noqa: PLC0415
+
+        if not _FIRST_LAUNCH_FLAG.exists():
+            self.voice_view.open_setup_wizard()
+
+    @Slot(bool, str, str)
+    def _apply_top_mic_status(self, mic_ok: bool, dev_name: str, dev_type: str = "") -> None:
+        if mic_ok:
+            self.top_mic_pill.set_tone("ok", "🟢 MIC: CONNECTED")
+            self.top_mic_pill.setToolTip(
+                f"Active Microphone: {dev_name} [{dev_type.upper() or 'AUDIO'}]" if dev_name else "Microphone Connected"
+            )
+            self._auto_recovery_triggered = False
+        else:
+            self.top_mic_pill.set_tone("danger", "🔴 MIC: NOT FOUND")
+            self.top_mic_pill.setToolTip(
+                "No openable microphone detected — running automatic recovery. Open Live Voice Assistant -> Troubleshoot Audio."
+            )
+
+    @Slot(dict)
+    def _on_mic_recovered(self, res: dict) -> None:
+        if res.get("status") == "recovered" and res.get("device"):
+            dev = res["device"]
+            self._apply_top_mic_status(
+                True,
+                str(dev.get("display_name") or dev.get("name") or "Microphone"),
+                str(dev.get("device_type") or ""),
+            )
+            self._request_poll()
+
     @Slot(dict, list)
     def _on_backend_data(self, overview: dict, audit_items: list) -> None:
         tel = overview.get("telemetry", {})
         sec = overview.get("security", {})
         audio = tel.get("audio", {})
+        voice = overview.get("voice", {})
 
         self.top_status_pill.set_tone("ok", "CORE API: CONNECTED")
-        self.top_mic_pill.set_tone(
-            "info" if audio.get("mic_available") else "warn",
-            f"MIC: {'READY' if audio.get('mic_available') else 'NOT FOUND'}",
-        )
+
+        mic_ok = bool(voice.get("mic_connected", audio.get("mic_available", False)))
+        dev_name = str(voice.get("current_device_name") or audio.get("active_device_name") or "")
+        dev_type = str(voice.get("current_device_type") or audio.get("active_device_type") or "")
+        self._apply_top_mic_status(mic_ok, dev_name, dev_type)
+        if not mic_ok and not self._auto_recovery_triggered:
+            self._auto_recovery_triggered = True
+            self.mic_recover_requested.emit()
+
         if sec.get("emergency_stop_active"):
             self.top_mode_pill.set_tone("danger", "EMERGENCY STOP")
         elif sec.get("restricted_mode"):
@@ -368,7 +423,7 @@ class AspirantMainWindow(QMainWindow):
         self.sidebar_ram_lbl.setText(f"RAM: {tel.get('app_ram_mb', 0):.0f} MB")
 
         self.home_view.update_state(overview, audit_items)
-        self.voice_view.update_status(overview.get("voice", {}))
+        self.voice_view.update_status(voice)
         self.security_view.update_state(sec, audit_items)
         self.models_view.update_providers(overview.get("providers", []))
         self.settings_view.update_overview(overview)
