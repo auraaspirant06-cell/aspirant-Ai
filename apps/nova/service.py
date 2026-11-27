@@ -21,6 +21,8 @@ class NovaService:
     """Powering NOVA desktop capabilities with safe fallback in containerized Linux environments."""
 
     WAKE_PHRASES = (
+        "hey baby",
+        "hello baby",
         "hey nova",
         "nova listen",
         "ok nova",
@@ -57,9 +59,9 @@ class NovaService:
             try:
                 from aspirant.voice.wakeword import match_wake_word
 
-                matched, tail = match_wake_word(transcript, wake_phrase="hey nova")
+                matched, tail = match_wake_word(transcript, wake_phrase="Hey Baby")
                 if matched:
-                    matched_phrase = "hey nova" if "nova" in cleaned else "aspirant"
+                    matched_phrase = "hey baby" if "baby" in cleaned else ("hey nova" if "nova" in cleaned else "aspirant")
                     return {"detected": True, "matched_phrase": matched_phrase, "command_tail": tail}
             except Exception:
                 pass

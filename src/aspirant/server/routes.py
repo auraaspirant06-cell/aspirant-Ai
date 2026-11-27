@@ -56,6 +56,9 @@ class ChatSendRequest(BaseModel):
 class VoiceConfigUpdateRequest(BaseModel):
     tts_provider: str | None = None
     stt_provider: str | None = None
+    voice_gender: str | None = None
+    wake_phrase: str | None = None
+    wake_word_enabled: bool | None = None
     speed: float | None = None
     pitch_hz: int | None = None
     emotion: str | None = None
@@ -284,7 +287,8 @@ def register_routes(app: FastAPI, auth_dependency: Any) -> None:
             raise HTTPException(status_code=400, detail="Message cannot be empty.")
         try:
             container.active_task = "Chatting with ASPIRANT AI"
-            return await container.chat.send_message(
+            container.voice.robot.set_state("THINKING", "Reasoning on your request...")
+            resp = await container.chat.send_message(
                 user_text=body.message,
                 conversation_id=body.conversation_id,
                 persona_id=body.persona_id,
@@ -292,9 +296,13 @@ def register_routes(app: FastAPI, auth_dependency: Any) -> None:
                 language_override=body.language_override,
                 model=body.model,
             )
+            container.voice.robot.set_state("SUCCESS", "Response ready")
+            return resp
         except PermissionDeniedError as exc:
+            container.voice.robot.set_state("ERROR", "Permission denied")
             raise HTTPException(status_code=403, detail=str(exc)) from exc
         except ProviderError as exc:
+            container.voice.robot.set_state("ERROR", "AI provider unavailable")
             raise HTTPException(status_code=503, detail=str(exc)) from exc
         finally:
             if not container.permissions.is_emergency_stopped:
@@ -325,6 +333,21 @@ def register_routes(app: FastAPI, auth_dependency: Any) -> None:
                     container.active_task = "Idle — Ready"
 
         return StreamingResponse(event_generator(), media_type="text/event-stream")
+
+    @app.get("/api/v1/robot/state", dependencies=[auth_dependency])
+    async def robot_state() -> dict[str, Any]:
+        return app.state.container.voice.robot.snapshot()
+
+    @app.post("/api/v1/robot/state", dependencies=[auth_dependency])
+    async def set_robot_state(body: dict[str, Any] = Body(...)) -> dict[str, Any]:
+        try:
+            return app.state.container.voice.robot.set_state(
+                body.get("state", "IDLE"),
+                status_text=body.get("status_text"),
+                speech_amplitude=float(body.get("speech_amplitude", 0.0)),
+            )
+        except ValueError as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
 
     @app.get("/api/v1/voice/status", dependencies=[auth_dependency])
     async def voice_status() -> dict[str, Any]:
@@ -386,7 +409,10 @@ def register_routes(app: FastAPI, auth_dependency: Any) -> None:
             if body.mode == "gemini_live":
                 c = app.state.container
                 gkey = c.vault.get_secret("GEMINI_API_KEY") or c.settings.gemini_api_key
-                res = c.voice.gemini_live.start(api_key=gkey, loop=loop, female_voice="Kore")
+                from aspirant.voice.profiles import resolve_gemini_voice
+
+                vname = resolve_gemini_voice(c.voice.config.voice_gender, c.voice.config.voice_override)
+                res = c.voice.gemini_live.start(api_key=gkey, loop=loop, voice_name=vname)
                 c.voice._set_state("listening")
                 return {**c.voice.status(), **res}
             return app.state.container.voice.start_listening(body.mode, loop)

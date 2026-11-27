@@ -8,7 +8,7 @@ from typing import Any
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
-from aspirant.coding.devops import build_deployment_guide
+from aspirant.coding.devops import build_deployment_guide, inspect_and_check_ssh
 from aspirant.coding.generator import build_project_blueprint
 from aspirant.coding.sandbox import analyze_error_log
 from aspirant.providers.base import ProviderError
@@ -71,10 +71,25 @@ class ProjectPackRequest(BaseModel):
 
 class DeployGuideRequest(BaseModel):
     app_name: str = "aspirant-app"
-    platform: str = "Ubuntu VPS"
+    platform: str = "Azure"
     domain: str = "app.example.com"
     app_port: int = 8000
+    project_root: str | None = None
     execution_confirmed: bool = False
+
+
+class DeployPreflightRequest(BaseModel):
+    project_root: str | None = None
+    ssh_host: str = ""
+    ssh_user: str = "ubuntu"
+    ssh_key_path: str = ""
+
+
+class BootstrapProjectRequest(BaseModel):
+    target_dir: str
+    project_name: str
+    stack: str = "fastapi"
+    overwrite: bool = False
 
 
 class DebugLogRequest(BaseModel):
@@ -247,9 +262,37 @@ def create_coding_router(container: Any, auth_dependency: Any) -> APIRouter:
                 platform=body.platform,
                 domain=body.domain,
                 app_port=body.app_port,
+                project_root=body.project_root,
                 execution_confirmed=body.execution_confirmed,
             )
-        except PermissionDeniedError as exc:
+        except (PermissionDeniedError, FileNotFoundError) as exc:
+            status_code = 404 if isinstance(exc, FileNotFoundError) else 403
+            raise HTTPException(status_code=status_code, detail=str(exc)) from exc
+
+    @router.post("/deploy-preflight")
+    async def deploy_preflight(body: DeployPreflightRequest) -> dict[str, Any]:
+        try:
+            container.permissions.require(Permission.READ, "Inspect project & SSH deployment readiness", category="coding")
+            return inspect_and_check_ssh(
+                project_root=body.project_root,
+                ssh_host=body.ssh_host,
+                ssh_user=body.ssh_user,
+                ssh_key_path=body.ssh_key_path,
+            )
+        except (PermissionDeniedError, FileNotFoundError) as exc:
+            status_code = 404 if isinstance(exc, FileNotFoundError) else 403
+            raise HTTPException(status_code=status_code, detail=str(exc)) from exc
+
+    @router.post("/bootstrap")
+    async def bootstrap_project(body: BootstrapProjectRequest) -> dict[str, Any]:
+        try:
+            return container.autonomous_coder.bootstrap_and_verify_project(
+                target_dir=body.target_dir,
+                project_name=body.project_name,
+                stack=body.stack,
+                overwrite=body.overwrite,
+            )
+        except (PermissionDeniedError, PermissionError) as exc:
             raise HTTPException(status_code=403, detail=str(exc)) from exc
 
     @router.post("/debug")

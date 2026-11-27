@@ -11,8 +11,8 @@
 ## Core Products
 
 1. **NOVA (`apps/nova`, `src/aspirant`, `desktop/`)** — Advanced Desktop AI Assistant for Windows
-   - Wake-word activation (`"Hey Nova"` / `"Hey Aspirant"`), female neural TTS & 18+ Indian languages (`src/aspirant/voice`, `src/aspirant/personality`)
-   - Clipboard intelligence, WinRT OCR / screen vision, isolated Microsoft Edge automation, file manager, command policy guardrails, coding studio, media studio, and 19 verified `.gov.in` portal workflows
+   - Configurable wake-word activation (`"Hey Baby"` default, `"Hey Aspirant"`, `"Hey Nova"`), **female & male** neural TTS + 18+ Indian languages, and **interactive animated 3D AI Robot HUD** (Three.js + PySide6 across 8 states) (`src/aspirant/voice`, `src/aspirant/robot`, `src/aspirant/personality`)
+   - Clipboard intelligence, WinRT OCR / screen vision, isolated Microsoft Edge automation, file manager, command policy guardrails, coding studio (`22` languages + autonomous project bootstrap), automatic deployment planner (`Azure`, `AWS`, `Ubuntu VPS`, `DigitalOcean`, `Hetzner`, `Docker`, `K8s`), media studio, and 19 verified `.gov.in` portal workflows
    - Electron + Tauri compatibility shell with system tray, notification center, global hotkeys (`Ctrl+Shift+N`, `Ctrl+Shift+M`), and background backend supervisor
 2. **MJ (`apps/mj`)** — Human-Like Intelligent Companion
    - Cross-device persistent memory, context awareness, adaptive user profiling
@@ -55,6 +55,8 @@ AspirantAI/
 ## Quick Start
 
 - **Installation & Local Run:** See [docs/INSTALLATION.md](docs/INSTALLATION.md)
+- **Security Architecture:** See [docs/SECURITY.md](docs/SECURITY.md)
+- **Troubleshooting Guide:** See [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md)
 - **User Manual:** See [docs/USER_MANUAL.md](docs/USER_MANUAL.md)
 - **API Reference:** See [docs/API_DOCUMENTATION.md](docs/API_DOCUMENTATION.md)
 - **Architecture Deep Dive:** See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)

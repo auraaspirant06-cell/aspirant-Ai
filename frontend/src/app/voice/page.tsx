@@ -4,6 +4,7 @@ import React, { useCallback, useEffect, useState } from "react";
 import { Activity, Mic, MicOff, RefreshCw, Shield, Volume2, Wifi, WifiOff, Wrench } from "lucide-react";
 import { BrandLoader } from "@/components/BrandLoader";
 import { GlassCard } from "@/components/GlassCard";
+import { Robot3D, type RobotState } from "@/components/Robot3D";
 import { WorkspaceShell } from "@/components/WorkspaceShell";
 import {
   AudioDiagnosticsResponse,
@@ -19,10 +20,12 @@ const SUPPORTED_LANGUAGES = [
 ];
 
 const VOICE_PERSONALITIES = [
-  { id: "aanya-warm", label: "Aanya — Warm Companion (en-IN / hi-IN)" },
-  { id: "kavya-executive", label: "Kavya — Crisp Executive (en-IN)" },
-  { id: "meera-mentor", label: "Meera — Calm Study Mentor (hi-IN)" },
-  { id: "riya-hinglish", label: "Riya — Expressive Hinglish" },
+  { id: "aanya-warm", label: "Aanya — Warm Companion Female (en-IN / hi-IN)" },
+  { id: "kavya-executive", label: "Kavya — Crisp Executive Female (en-IN)" },
+  { id: "meera-mentor", label: "Meera — Calm Study Mentor Female (hi-IN)" },
+  { id: "riya-hinglish", label: "Riya — Expressive Hinglish Female" },
+  { id: "arjun-calm", label: "Arjun — Confident Tech Lead Male (en-IN)" },
+  { id: "kabir-warm", label: "Kabir — Warm Hindi/Hinglish Male (hi-IN)" },
 ];
 
 const DEVICE_TYPE_BADGES: Record<string, string> = {
@@ -63,14 +66,17 @@ function VoiceWorkspaceContent({
   token: string;
   setStatusNote: (note: string) => void;
 }) {
-  const [transcript, setTranscript] = useState("Hey Nova bhai aaj ka plan batao");
+  const [transcript, setTranscript] = useState("Hey Baby aaj ka plan batao");
+  const [wakePhrase, setWakePhrase] = useState("Hey Baby");
+  const [voiceGender, setVoiceGender] = useState<"female" | "male">("female");
   const [personality, setPersonality] = useState("aanya-warm");
-  const [listenMode, setListenMode] = useState<"always" | "ptt" | "wake">("always");
+  const [listenMode, setListenMode] = useState<"always" | "ptt" | "wake">("wake");
   const [noiseSuppression, setNoiseSuppression] = useState(true);
   const [muted, setMuted] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [robotState, setRobotState] = useState<RobotState>("LISTENING");
   const [resultSummary, setResultSummary] = useState(
-    "Live Companion Mode active — auto-detects 14 Indian languages + Hinglish, retains language memory, and supports barge-in interruption."
+    "Live Companion Mode active — wake phrase 'Hey Baby', female & male Indian neural voices, 14 languages + Hinglish, and barge-in interruption."
   );
 
   const [diagData, setDiagData] = useState<AudioDiagnosticsResponse | null>(null);
@@ -269,6 +275,22 @@ function VoiceWorkspaceContent({
 
   return (
     <div className="space-y-5">
+      <Robot3D
+        compact
+        state={muted ? "IDLE" : busy ? "THINKING" : robotState}
+        statusText={
+          muted
+            ? "Microphone Muted"
+            : busy
+              ? "Processing Multilingual Utterance..."
+              : `Armed for "${wakePhrase}" (${voiceGender} voice)`
+        }
+        speechAmplitude={robotState === "SPEAKING" ? 0.72 : 0.25}
+        wakePhrase={wakePhrase}
+        voiceGender={voiceGender}
+        onStateSelect={(next) => setRobotState(next)}
+      />
+
       {/* ── First Launch Setup Wizard Card ── */}
       {!setupDone && (
         <GlassCard>
@@ -326,6 +348,14 @@ function VoiceWorkspaceContent({
 
           <div className="flex flex-wrap items-center gap-2 text-xs">
             <MicStatusBadge connected={micConnected} deviceName={devName} />
+            <label htmlFor="wake-phrase-input" className="sr-only">Wake Phrase</label>
+            <input
+              id="wake-phrase-input"
+              value={wakePhrase}
+              onChange={(e) => setWakePhrase(e.target.value)}
+              placeholder="Wake phrase"
+              className="input-surface min-h-[36px] w-28 rounded-xl px-2.5 py-1 text-xs font-semibold outline-none focus-visible:ring-2 focus-visible:ring-sky-500"
+            />
             <label htmlFor="listen-mode-select" className="sr-only">Voice Activation Mode</label>
             <select
               id="listen-mode-select"
@@ -333,15 +363,19 @@ function VoiceWorkspaceContent({
               onChange={(e) => setListenMode(e.target.value as "always" | "ptt" | "wake")}
               className="select-surface min-h-[36px] rounded-xl px-3 py-1.5 text-xs font-semibold outline-none focus-visible:ring-2 focus-visible:ring-sky-500"
             >
+              <option value="wake">Wake Word (&ldquo;{wakePhrase}&rdquo;)</option>
               <option value="always">Continuous Listening Mode</option>
-              <option value="wake">Wake Word (&ldquo;Hey Nova / Aspirant&rdquo;)</option>
               <option value="ptt">Push-to-Talk Mode</option>
             </select>
             <label htmlFor="voice-personality-select" className="sr-only">Voice Personality</label>
             <select
               id="voice-personality-select"
               value={personality}
-              onChange={(e) => setPersonality(e.target.value)}
+              onChange={(e) => {
+                const pid = e.target.value;
+                setPersonality(pid);
+                setVoiceGender(pid.startsWith("arjun") || pid.startsWith("kabir") ? "male" : "female");
+              }}
               className="select-surface min-h-[36px] rounded-xl px-3 py-1.5 text-xs font-semibold outline-none focus-visible:ring-2 focus-visible:ring-sky-500"
             >
               {VOICE_PERSONALITIES.map((v) => (

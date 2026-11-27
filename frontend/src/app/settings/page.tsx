@@ -8,9 +8,10 @@ import { WorkspaceShell } from "@/components/WorkspaceShell";
 
 export default function SettingsPage() {
   const { theme, toggleTheme } = useTheme();
-  const [wakeWord, setWakeWord] = useState("Hey Nova");
-  const [defaultModel, setDefaultModel] = useState("gemini-4-argon");
-  const [preferredLang, setPreferredLang] = useState("auto");
+  const [wakeWord, setWakeWord] = useState("Hey Baby");
+  const [voiceGender, setVoiceGender] = useState("female");
+  const [defaultModel, setDefaultModel] = useState("gemini-4-hydrogen");
+  const [preferredLang, setPreferredLang] = useState("hi-IN");
   const [voiceAuthUnlock, setVoiceAuthUnlock] = useState(false);
 
   return (
@@ -33,12 +34,37 @@ export default function SettingsPage() {
                 <select
                   id="wake-word-select"
                   value={wakeWord}
-                  onChange={(e) => setWakeWord(e.target.value)}
+                  onChange={(e) => {
+                    setWakeWord(e.target.value);
+                    setStatusNote(`Wake phrase updated to '${e.target.value}'.`);
+                  }}
                   className="select-surface w-full rounded-xl p-2 font-medium"
                 >
-                  <option value="Hey Nova">Hey Nova</option>
+                  <option value="Hey Baby">Hey Baby (Default)</option>
                   <option value="Hey Aspirant">Hey Aspirant</option>
+                  <option value="Hey Nova">Hey Nova</option>
                   <option value="Ok Nova">Ok Nova</option>
+                </select>
+              </div>
+
+              <div>
+                <label
+                  htmlFor="voice-gender-select"
+                  className="mb-1 block font-semibold text-sky-600 dark:text-sky-400"
+                >
+                  Companion Voice Gender
+                </label>
+                <select
+                  id="voice-gender-select"
+                  value={voiceGender}
+                  onChange={(e) => {
+                    setVoiceGender(e.target.value);
+                    setStatusNote(`Companion voice gender set to ${e.target.value}.`);
+                  }}
+                  className="select-surface w-full rounded-xl p-2 font-medium"
+                >
+                  <option value="female">Female (Aanya / Swara / Kore)</option>
+                  <option value="male">Male (Arjun / Madhur / Puck)</option>
                 </select>
               </div>
 
@@ -55,8 +81,10 @@ export default function SettingsPage() {
                   onChange={(e) => setDefaultModel(e.target.value)}
                   className="select-surface w-full rounded-xl p-2 font-medium"
                 >
+                  <option value="gemini-4-hydrogen">Gemini 4 Hydrogen (Fast Coding &amp; Agentic)</option>
                   <option value="gemini-4-argon">Gemini 4 Argon (Balanced)</option>
                   <option value="gemini-4-carbon">Gemini 4 Carbon (Deep Research)</option>
+                  <option value="gemini-3.8-flash">Gemini 3.8 Flash (Low Latency)</option>
                   <option value="gpt-4o-mini">OpenAI-Compatible (GPT)</option>
                   <option value="qwen2.5:latest">Ollama Local</option>
                 </select>

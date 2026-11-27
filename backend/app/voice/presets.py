@@ -21,6 +21,7 @@ class VoicePersonalityPreset:
     voice_id: str
     pitch_rate: float
     speaking_rate: float
+    gender: str = "female"
 
 
 VOICE_PRESETS: tuple[VoicePersonalityPreset, ...] = (
@@ -32,6 +33,7 @@ VOICE_PRESETS: tuple[VoicePersonalityPreset, ...] = (
         voice_id="en-IN-NeerjaExpressiveNeural",
         pitch_rate=1.02,
         speaking_rate=1.0,
+        gender="female",
     ),
     VoicePersonalityPreset(
         id="kavya-executive",
@@ -41,6 +43,7 @@ VOICE_PRESETS: tuple[VoicePersonalityPreset, ...] = (
         voice_id="en-IN-KavyaNeural",
         pitch_rate=1.0,
         speaking_rate=1.05,
+        gender="female",
     ),
     VoicePersonalityPreset(
         id="meera-mentor",
@@ -50,6 +53,7 @@ VOICE_PRESETS: tuple[VoicePersonalityPreset, ...] = (
         voice_id="hi-IN-SwaraNeural",
         pitch_rate=0.98,
         speaking_rate=0.96,
+        gender="female",
     ),
     VoicePersonalityPreset(
         id="riya-hinglish",
@@ -59,6 +63,27 @@ VOICE_PRESETS: tuple[VoicePersonalityPreset, ...] = (
         voice_id="hi-IN-AnanyaNeural",
         pitch_rate=1.04,
         speaking_rate=1.02,
+        gender="female",
+    ),
+    VoicePersonalityPreset(
+        id="arjun-calm",
+        name="Arjun — Confident Male Tech Lead",
+        accent="en-IN Studio Male",
+        style="confident-executive",
+        voice_id="en-IN-PrabhatNeural",
+        pitch_rate=1.0,
+        speaking_rate=1.0,
+        gender="male",
+    ),
+    VoicePersonalityPreset(
+        id="kabir-warm",
+        name="Kabir — Warm Hindi/Hinglish Male",
+        accent="hi-IN / en-IN Male Companion",
+        style="warm-helpful",
+        voice_id="hi-IN-MadhurNeural",
+        pitch_rate=0.99,
+        speaking_rate=1.0,
+        gender="male",
     ),
 )
 

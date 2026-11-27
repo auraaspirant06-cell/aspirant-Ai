@@ -8,11 +8,15 @@ import { BrandLoader } from "@/components/BrandLoader";
 import { CommandBar } from "@/components/CommandBar";
 import { GlassCard } from "@/components/GlassCard";
 import { ProductSuiteGrid } from "@/components/ProductSuiteGrid";
+import { Robot3D, type RobotState } from "@/components/Robot3D";
 import { WorkspaceShell } from "@/components/WorkspaceShell";
 import { ecosystemApi } from "@/lib/api";
 
 export default function OverviewPage() {
   const [busy, setBusy] = useState(false);
+  const [robotState, setRobotState] = useState<RobotState>("IDLE");
+  const [robotNote, setRobotNote] = useState("Standing by — say 'Hey Baby' or dispatch an AI task.");
+  const [speechAmp, setSpeechAmp] = useState(0);
   const [selectedAgents, setSelectedAgents] = useState<string[]>([
     "planning",
     "research",
@@ -38,36 +42,66 @@ export default function OverviewPage() {
     <WorkspaceShell routeId="overview">
       {({ token, setStatusNote }) => (
         <div className="space-y-5">
-          <CommandBar
-            busy={busy}
-            onSubmit={async (prompt) => {
-              setBusy(true);
-              try {
-                if (token) {
-                  const res = await ecosystemApi.executeAgents(token, {
-                    objective: prompt,
-                    source_app: "web",
-                  });
-                  setSelectedAgents(res.selected_agents);
-                  setPlanSteps(res.plan_steps);
-                  setStatusNote(`Dispatched multi-agent run ${res.run_id.slice(0, 8)}.`);
-                } else {
-                  setSelectedAgents(["planning", "research", "coding", "content", "support"]);
-                  setPlanSteps([
-                    { order: 1, agent: "planning", output: `Planned: ${prompt}` },
-                    { order: 2, agent: "research", output: "Grounded against hybrid Qdrant/Chroma memory." },
-                  ]);
-                  setStatusNote("Previewed multi-agent plan (connect JWT to run against backend).");
-                }
-              } finally {
-                setBusy(false);
-              }
-            }}
-          />
+          <div className="grid gap-5 lg:grid-cols-12">
+            <div className="space-y-4 lg:col-span-7">
+              <CommandBar
+                busy={busy}
+                onSubmit={async (prompt) => {
+                  setBusy(true);
+                  const lower = prompt.toLowerCase();
+                  setRobotState(lower.includes("code") || lower.includes("build") ? "CODING" : "THINKING");
+                  setRobotNote(`Executing: "${prompt.slice(0, 56)}"`);
+                  try {
+                    if (token) {
+                      const res = await ecosystemApi.executeAgents(token, {
+                        objective: prompt,
+                        source_app: "web",
+                      });
+                      setSelectedAgents(res.selected_agents);
+                      setPlanSteps(res.plan_steps);
+                      setRobotState("SPEAKING");
+                      setSpeechAmp(0.8);
+                      setRobotNote(`Completed multi-agent run ${res.run_id.slice(0, 8)}.`);
+                      setStatusNote(`Dispatched multi-agent run ${res.run_id.slice(0, 8)}.`);
+                    } else {
+                      setSelectedAgents(["planning", "research", "coding", "content", "support"]);
+                      setPlanSteps([
+                        { order: 1, agent: "planning", output: `Planned: ${prompt}` },
+                        { order: 2, agent: "research", output: "Grounded against hybrid Qdrant/Chroma memory." },
+                      ]);
+                      setRobotState("SUCCESS");
+                      setSpeechAmp(0.45);
+                      setRobotNote("Preview orchestration complete.");
+                      setStatusNote("Previewed multi-agent plan (connect JWT to run against backend).");
+                    }
+                  } catch (err) {
+                    setRobotState("ERROR");
+                    setSpeechAmp(0);
+                    setRobotNote(err instanceof Error ? err.message : "Task failed");
+                  } finally {
+                    setBusy(false);
+                  }
+                }}
+              />
+              {busy && <BrandLoader label="Orchestrating collaborative Aspirant AI agents..." />}
+              <ProductSuiteGrid />
+            </div>
 
-          {busy && <BrandLoader label="Orchestrating collaborative Aspirant AI agents..." />}
-
-          <ProductSuiteGrid />
+            <div className="lg:col-span-5">
+              <Robot3D
+                state={robotState}
+                statusText={robotNote}
+                speechAmplitude={speechAmp}
+                wakePhrase="Hey Baby"
+                voiceGender="female"
+                onStateSelect={(next) => {
+                  setRobotState(next);
+                  setSpeechAmp(next === "SPEAKING" ? 0.78 : next === "LISTENING" ? 0.3 : 0);
+                  setRobotNote(`Interactive mode: ${next}`);
+                }}
+              />
+            </div>
+          </div>
 
           <div className="grid gap-4 md:grid-cols-3 text-xs">
             <Link

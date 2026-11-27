@@ -83,9 +83,31 @@ class EcosystemSettings(BaseSettings):
     ollama_base_url: str = Field(
         default_factory=lambda: os.getenv("OLLAMA_BASE_URL", "http://127.0.0.1:11434")
     )
-    primary_chat_model: str = "gemini-4-argon"
-    fast_chat_model: str = "gemini-3.5-flash-lite"
-    deep_research_model: str = "gemini-4-carbon"
+    primary_chat_model: str = Field(default_factory=lambda: os.getenv("GEMINI_CHAT_MODEL", "gemini-4-argon"))
+    fast_chat_model: str = "gemini-3.8-flash"
+    deep_research_model: str = Field(default_factory=lambda: os.getenv("GEMINI_REASONING_MODEL", "gemini-4-carbon"))
+    live_voice_model: str = Field(default_factory=lambda: os.getenv("GEMINI_LIVE_MODEL", "gemini-3.8-live"))
+    tts_model: str = Field(default_factory=lambda: os.getenv("GEMINI_TTS_MODEL", "gemini-3.8-flash-tts"))
+    image_model: str = Field(default_factory=lambda: os.getenv("GEMINI_IMAGE_MODEL", "gemini-nano-banana-2.1"))
+    video_model: str = Field(default_factory=lambda: os.getenv("GEMINI_VIDEO_MODEL", "gemini-omni-1.2-flash"))
+
+    # Voice, Robot & Guarded Deployment Settings
+    default_wake_word: str = Field(
+        default_factory=lambda: os.getenv("WAKE_WORD") or os.getenv("ASPIRANT_WAKE_WORD") or "Hey Baby"
+    )
+    voice_language: str = Field(default_factory=lambda: os.getenv("VOICE_LANGUAGE", "hi-IN"))
+    voice_gender: str = Field(default_factory=lambda: os.getenv("VOICE_GENDER", "female"))
+    voice_mode: str = Field(default_factory=lambda: os.getenv("VOICE_MODE", "continuous"))
+    enable_robot: bool = Field(
+        default_factory=lambda: os.getenv("ENABLE_ROBOT", "true").lower() not in {"0", "false", "no"}
+    )
+    enable_computer_control: bool = Field(
+        default_factory=lambda: os.getenv("ENABLE_COMPUTER_CONTROL", "true").lower() not in {"0", "false", "no"}
+    )
+    deployment_provider: str = Field(default_factory=lambda: os.getenv("DEPLOYMENT_PROVIDER", "azure"))
+    ssh_host: str = Field(default_factory=lambda: os.getenv("SSH_HOST", ""))
+    ssh_user: str = Field(default_factory=lambda: os.getenv("SSH_USER", "ubuntu"))
+    ssh_key_path: str = Field(default_factory=lambda: os.getenv("SSH_KEY_PATH", ""))
 
     vector_backend: Literal["auto", "qdrant", "chroma", "memory"] = "auto"
     qdrant_url: str = Field(default_factory=lambda: os.getenv("QDRANT_URL", ""))

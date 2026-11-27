@@ -14,6 +14,7 @@ from backend.app.api.v1 import (
     integrations,
     memory,
     productivity,
+    robot,
     security,
     self_healing,
     voice,
@@ -28,6 +29,7 @@ api_router.include_router(memory.router)
 api_router.include_router(agents.router)
 api_router.include_router(productivity.router)
 api_router.include_router(voice.router)
+api_router.include_router(robot.router)
 api_router.include_router(integrations.router)
 api_router.include_router(self_healing.router)
 api_router.include_router(nova_router)

@@ -17,6 +17,7 @@ from aspirant.core.telemetry import invalidate_audio_cache, probe_audio_devices
 from aspirant.personality.language_detect import detect_language
 from aspirant.providers.stt_providers import STTRouter
 from aspirant.providers.tts_providers import TTSResult, TTSRouter
+from aspirant.robot import RobotAvatarController
 from aspirant.security.audit import AuditLogger
 from aspirant.security.permissions import Permission, PermissionManager
 from aspirant.voice.audio_io import (
@@ -28,7 +29,7 @@ from aspirant.voice.audio_io import (
 )
 from aspirant.voice.diagnostics import AudioDiagnosticsManager, get_diagnostics_manager
 from aspirant.voice.gemini_live import GeminiLiveSessionManager
-from aspirant.voice.profiles import VoiceConfig
+from aspirant.voice.profiles import VoiceConfig, resolve_gemini_voice
 from aspirant.voice.wakeword import build_voice_confirmation, match_wake_word
 
 
@@ -63,6 +64,7 @@ class VoiceAssistantEngine:
         self.audit_logger = audit_logger
         self.event_bus = event_bus
         self.diagnostics = diagnostics or get_diagnostics_manager()
+        self.robot = RobotAvatarController(event_bus=event_bus)
 
         self.config = VoiceConfig()
         self.state = "idle"  # idle | armed_wake_word | listening | transcribing | thinking | speaking
@@ -170,11 +172,16 @@ class VoiceAssistantEngine:
             if hasattr(self.config, key):
                 setattr(self.config, key, value)
         self._vad.noise_suppression = self.config.noise_suppression
+        self.robot.update_voice_settings(
+            wake_phrase=self.config.wake_phrase,
+            voice_gender=self.config.voice_gender,
+        )
         self.event_bus.publish("voice.config", self.status())
         return self.status()
 
     def _set_state(self, new_state: str) -> None:
         self.state = new_state
+        self.robot.sync_from_voice_state(new_state)
         self.event_bus.publish("voice.state", self.status())
 
     def interrupt_speech(self) -> dict[str, Any]:
@@ -284,12 +291,37 @@ class VoiceAssistantEngine:
             self._set_state("idle" if self.config.activation_mode == "idle" else "armed_wake_word")
             return {"ignored": True, "reason": "No intelligible speech detected.", "stt": asdict(stt)}
 
-        if require_wake_word:
-            matched, command = match_wake_word(text)
+        if require_wake_word and self.config.wake_word_enabled:
+            matched, command = match_wake_word(text, wake_phrase=self.config.wake_phrase)
             if not matched:
                 self._set_state("armed_wake_word")
-                return {"ignored": True, "reason": "Wake word 'Hey Aspirant' not heard.", "transcript": text}
-            text = command or "Hello Aspirant"
+                return {
+                    "ignored": True,
+                    "reason": f"Wake word '{self.config.wake_phrase}' not heard.",
+                    "transcript": text,
+                }
+            if not command.strip():
+                greeting = build_voice_confirmation("", owner_title="Boss")
+                self._set_state("speaking")
+                tts_info = None
+                if speak_output:
+                    tts = await self.synthesize_only(greeting, language_code=self.last_language or "en")
+                    tts_info = {
+                        "provider": tts.provider,
+                        "voice": tts.voice_name,
+                        "mime_type": tts.mime_type,
+                        "latency_ms": round(tts.latency_ms, 1),
+                    }
+                    await asyncio.to_thread(self.playback.play_audio_bytes, tts.audio_bytes)
+                self._set_state("listening")
+                return {
+                    "transcript": text,
+                    "confirmation": greeting,
+                    "reply": greeting,
+                    "wake_word_triggered": True,
+                    "tts": tts_info,
+                }
+            text = command
 
         res = await self.process_spoken_text(
             transcript=text,

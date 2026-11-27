@@ -2052,6 +2052,72 @@
         ]
       }
     },
+    "/api/v1/robot/state": {
+      "get": {
+        "tags": [
+          "3D AI Robot Interface"
+        ],
+        "summary": "Get Robot State",
+        "description": "Return current 3D Robot state, animation profile, and supported state list.",
+        "operationId": "get_robot_state_api_v1_robot_state_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response Get Robot State Api V1 Robot State Get"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "3D AI Robot Interface"
+        ],
+        "summary": "Update Robot State",
+        "description": "Transition the interactive 3D Robot animation state with TTS mouth amplitude.",
+        "operationId": "update_robot_state_api_v1_robot_state_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RobotStateUpdateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response Update Robot State Api V1 Robot State Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/integrations/catalog": {
       "get": {
         "tags": [
@@ -4455,6 +4521,69 @@
           "due_at"
         ],
         "title": "ReminderRequest"
+      },
+      "RobotStateUpdateRequest": {
+        "properties": {
+          "state": {
+            "type": "string",
+            "enum": [
+              "IDLE",
+              "LISTENING",
+              "THINKING",
+              "SPEAKING",
+              "CODING",
+              "WORKING",
+              "SUCCESS",
+              "ERROR"
+            ],
+            "title": "State"
+          },
+          "status_text": {
+            "type": "string",
+            "maxLength": 160,
+            "title": "Status Text",
+            "default": ""
+          },
+          "speech_amplitude": {
+            "type": "number",
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Speech Amplitude",
+            "default": 0.0
+          },
+          "wake_phrase": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 60
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Wake Phrase"
+          },
+          "voice_gender": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "female",
+                  "male"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Voice Gender"
+          }
+        },
+        "type": "object",
+        "required": [
+          "state"
+        ],
+        "title": "RobotStateUpdateRequest"
       },
       "SearchFilesRequest": {
         "properties": {

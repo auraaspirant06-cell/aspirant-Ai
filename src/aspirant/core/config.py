@@ -5,7 +5,7 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Literal
 
-from pydantic import Field, field_validator
+from pydantic import AliasChoices, Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -43,14 +43,49 @@ class AppSettings(BaseSettings):
     )
     elevenlabs_api_key: str | None = Field(default=None, alias="ELEVENLABS_API_KEY")
 
+    # Verified Gemini model configuration
+    gemini_chat_model: str = Field(default="gemini-4-hydrogen", alias="GEMINI_CHAT_MODEL")
+    gemini_reasoning_model: str = Field(
+        default="gemini-4-carbon", alias="GEMINI_REASONING_MODEL"
+    )
+    gemini_live_model: str = Field(default="gemini-3.8-live", alias="GEMINI_LIVE_MODEL")
+    gemini_tts_model: str = Field(default="gemini-3.8-flash-tts", alias="GEMINI_TTS_MODEL")
+    gemini_image_model: str = Field(
+        default="gemini-nano-banana-2.1", alias="GEMINI_IMAGE_MODEL"
+    )
+    gemini_video_model: str = Field(
+        default="gemini-omni-1.2-flash", alias="GEMINI_VIDEO_MODEL"
+    )
+
     # Voice & media defaults
-    wake_word: str = Field(default="hey_aspirant", alias="ASPIRANT_WAKE_WORD")
+    wake_word: str = Field(
+        default="Hey Baby",
+        validation_alias=AliasChoices("ASPIRANT_WAKE_WORD", "WAKE_WORD"),
+    )
+    voice_language: str = Field(
+        default="hi-IN",
+        validation_alias=AliasChoices("ASPIRANT_VOICE_LANGUAGE", "VOICE_LANGUAGE"),
+    )
+    voice_gender: Literal["female", "male"] = Field(
+        default="female",
+        validation_alias=AliasChoices("ASPIRANT_VOICE_GENDER", "VOICE_GENDER"),
+    )
+    voice_mode: str = Field(
+        default="continuous",
+        validation_alias=AliasChoices("ASPIRANT_VOICE_MODE", "VOICE_MODE"),
+    )
     voice_default_tts: str = Field(default="auto", alias="ASPIRANT_VOICE_DEFAULT_TTS")
     voice_female_en: str = Field(
         default="en-IN-NeerjaNeural", alias="ASPIRANT_VOICE_FEMALE_EN"
     )
     voice_female_hi: str = Field(
         default="hi-IN-SwaraNeural", alias="ASPIRANT_VOICE_FEMALE_HI"
+    )
+    voice_male_en: str = Field(
+        default="en-IN-PrabhatNeural", alias="ASPIRANT_VOICE_MALE_EN"
+    )
+    voice_male_hi: str = Field(
+        default="hi-IN-MadhurNeural", alias="ASPIRANT_VOICE_MALE_HI"
     )
     stt_provider: str = Field(default="auto", alias="ASPIRANT_STT_PROVIDER")
     whisper_model: Literal["tiny", "base", "small"] = Field(
@@ -60,6 +95,14 @@ class AppSettings(BaseSettings):
     video_provider: str = Field(
         default="gemini-omni", alias="ASPIRANT_VIDEO_PROVIDER"
     )
+
+    # Interactive 3D Robot, PC Control & Deployment Defaults
+    enable_robot: bool = Field(default=True, alias="ENABLE_ROBOT")
+    enable_computer_control: bool = Field(default=True, alias="ENABLE_COMPUTER_CONTROL")
+    deployment_provider: str = Field(default="azure", alias="DEPLOYMENT_PROVIDER")
+    ssh_host: str = Field(default="", alias="SSH_HOST")
+    ssh_user: str = Field(default="ubuntu", alias="SSH_USER")
+    ssh_key_path: str = Field(default="", alias="SSH_KEY_PATH")
 
     @field_validator("host")
     @classmethod

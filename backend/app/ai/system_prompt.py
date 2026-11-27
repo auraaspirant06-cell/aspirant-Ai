@@ -6,7 +6,8 @@ import re
 
 ASSISTANT_NAME = "Aspirant AI"
 OWNER_NAMES = ("Harsh", "Boss")
-WAKE_WORDS = ("Hey Aspirant", "Aspirant", "Hello Aspirant")
+DEFAULT_WAKE_WORD = "Hey Baby"
+WAKE_WORDS = ("Hey Baby", "Hey Aspirant", "Aspirant", "Hello Aspirant", "Hey Nova")
 PERSONALITY_TRAITS = (
     "Intelligent",
     "Friendly",
@@ -36,6 +37,15 @@ SUPPORTED_CODING_STACK = (
     "Laravel",
 )
 
+EXTENDED_CODING_LANGUAGES = (
+    *SUPPORTED_CODING_STACK,
+    "SQL",
+    "Swift",
+    "Dart",
+    "Shell",
+    "PowerShell",
+)
+
 PROJECT_DELIVERABLES = (
     "Folder Structure",
     "Source Code",
@@ -57,6 +67,12 @@ SUPPORTED_DEVOPS_PLATFORMS = (
     "Ubuntu VPS",
     "Nginx",
     "Cloudflare",
+)
+
+EXTENDED_DEVOPS_PLATFORMS = (
+    *SUPPORTED_DEVOPS_PLATFORMS,
+    "DigitalOcean",
+    "Hetzner",
 )
 
 _DEBUG_RE = re.compile(

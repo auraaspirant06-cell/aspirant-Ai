@@ -19,17 +19,19 @@ from aspirant.voice.audio_io import FRAME_SAMPLES, SAMPLE_RATE
 
 def build_live_config(
     system_instruction: str = (
-        "You are ASPIRANT AI, an intelligent, warm, concise personal assistant with a natural female voice. "
-        "Detect Hindi, English, Hinglish, and Indian languages automatically and respond in the same language without unnecessary translation."
+        "You are ASPIRANT AI, an intelligent, warm, concise personal assistant with a natural voice. "
+        "Detect Hindi, English, Hinglish, Bhojpuri, and Indian languages automatically and respond in the same language without unnecessary translation."
     ),
     female_voice: str = "Kore",
+    voice_name: str | None = None,
 ) -> types.LiveConnectConfig:
-    """Build a valid Gemini 3.8 Live configuration with female voice and live transcription."""
+    """Build a valid Gemini 3.8 Live configuration with configurable voice and live transcription."""
+    selected = voice_name or female_voice or "Kore"
     return types.LiveConnectConfig(
         response_modalities=[types.Modality.AUDIO],
         speech_config=types.SpeechConfig(
             voice_config=types.VoiceConfig(
-                prebuilt_voice_config=types.PrebuiltVoiceConfig(voice_name=female_voice)
+                prebuilt_voice_config=types.PrebuiltVoiceConfig(voice_name=selected)
             )
         ),
         system_instruction=types.Content(parts=[types.Part(text=system_instruction)]),
@@ -66,7 +68,9 @@ class GeminiLiveSessionManager:
         api_key: str | None,
         loop: asyncio.AbstractEventLoop,
         female_voice: str = "Kore",
+        voice_name: str | None = None,
     ) -> dict[str, Any]:
+        selected_voice = voice_name or female_voice or "Kore"
         self.permissions.require(Permission.READ, "Activate microphone for Gemini 3.8 Live", category="voice")
         self.permissions.require(Permission.NETWORK, "Connect Gemini 3.8 Live WebSocket", category="voice")
         if not (api_key or "").strip():
@@ -76,16 +80,16 @@ class GeminiLiveSessionManager:
         self._stop_event.clear()
         self._active = True
         self._task = asyncio.run_coroutine_threadsafe(
-            self._run_session(api_key.strip(), female_voice), loop
+            self._run_session(api_key.strip(), selected_voice), loop
         )  # type: ignore[assignment]
         self.audit_logger.log(
             category="voice",
-            action=f"Started Gemini 3.8 Live session (voice={female_voice})",
+            action=f"Started Gemini 3.8 Live session (voice={selected_voice})",
             permission="NETWORK",
             decision="started",
             status="ok",
         )
-        return {"active": True, "model": self.model, "voice": female_voice}
+        return {"active": True, "model": self.model, "voice": selected_voice}
 
     def stop(self) -> dict[str, Any]:
         self._stop_event.set()
@@ -108,14 +112,14 @@ class GeminiLiveSessionManager:
             )
         return {"active": False}
 
-    async def _run_session(self, api_key: str, female_voice: str) -> None:
-        client = genai.Client(api_key=api_key)
-        config = build_live_config(female_voice=female_voice)
+    async def _run_session(self, api_key: str, voice_name: str) -> None:
+        client = genai.Client(api_key=api_key, http_options={"api_version": "v1beta"})
+        config = build_live_config(voice_name=voice_name)
         audio_out_queue: asyncio.Queue[bytes] = asyncio.Queue(maxsize=256)
 
         try:
             async with client.aio.live.connect(model=self.model, config=config) as session:
-                self.event_bus.publish("voice.live_connected", {"model": self.model, "voice": female_voice})
+                self.event_bus.publish("voice.live_connected", {"model": self.model, "voice": voice_name})
 
                 async def _send_mic() -> None:
                     with sd.RawInputStream(

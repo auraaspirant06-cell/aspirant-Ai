@@ -817,8 +817,8 @@ class VoiceAssistantView(QWidget):
 
         hdr_row = QHBoxLayout()
         self.header = SectionHeader(
-            "Live Female Voice Assistant",
-            'Wake word "Hey Aspirant" • Continuous & Push-to-Talk • 14+ Indian Languages • Barge-In',
+            "Live Companion Voice Assistant",
+            'Wake word "Hey Baby" (configurable) • Continuous & Push-to-Talk • Female & Male Neural Voices • Barge-In',
             badge_text="IDLE",
             tone="muted",
         )
@@ -847,7 +847,7 @@ class VoiceAssistantView(QWidget):
 
         btn_grid = QGridLayout()
         btn_grid.setSpacing(8)
-        self.wake_btn = QPushButton('Arm "Hey Aspirant"')
+        self.wake_btn = QPushButton('Arm "Hey Baby"')
         self.wake_btn.setProperty("variant", "primary")
         self.wake_btn.clicked.connect(lambda: self._start_mode("wake_word"))
 
@@ -903,20 +903,29 @@ class VoiceAssistantView(QWidget):
         self.mic_panel.mic_status_changed.connect(self._on_mic_status_changed)
         layout.addWidget(self.mic_panel)
 
-        # Female Voice Tuning & Provider Settings
+        # Voice Tuning, Gender & Wake Word Settings
         tuning = GlassCard()
-        t_title = QLabel("Female Voice & Multilingual Speech Settings")
+        t_title = QLabel("Voice Identity, Wake Phrase & Multilingual Speech Settings")
         t_title.setStyleSheet("font-size: 15px; font-weight: 700;")
         tuning.body_layout.addWidget(t_title)
 
         grid = QGridLayout()
         grid.setSpacing(10)
 
+        self.gender_combo = QComboBox()
+        self.gender_combo.addItem("Female (Neerja / Swara / Kore)", "female")
+        self.gender_combo.addItem("Male (Prabhat / Madhur / Puck)", "male")
+        self.gender_combo.currentIndexChanged.connect(self._push_config)
+
+        self.wake_input = QLineEdit("Hey Baby")
+        self.wake_input.setPlaceholderText("Wake phrase (e.g. Hey Baby)")
+        self.wake_input.editingFinished.connect(self._push_config)
+
         self.tts_combo = QComboBox()
         self.tts_combo.addItem("Auto (Gemini 3.8 TTS Primary -> Edge Neural)", "auto")
-        self.tts_combo.addItem("Gemini 3.8 Flash TTS (Kore Female)", "gemini")
-        self.tts_combo.addItem("Edge Female Neural (Free Indian Voices)", "edge-tts")
-        self.tts_combo.addItem("Windows SAPI5 (Offline Female)", "sapi5")
+        self.tts_combo.addItem("Gemini 3.8 Flash TTS (Kore / Puck)", "gemini")
+        self.tts_combo.addItem("Edge Indian Neural Voices", "edge-tts")
+        self.tts_combo.addItem("Windows SAPI5 (Offline)", "sapi5")
         self.tts_combo.currentIndexChanged.connect(self._push_config)
 
         self.stt_combo = QComboBox()
@@ -955,7 +964,7 @@ class VoiceAssistantView(QWidget):
         self.noise_chk.setChecked(True)
         self.noise_chk.toggled.connect(self._push_config)
 
-        grid.addWidget(QLabel("Female TTS Provider:"), 0, 0)
+        grid.addWidget(QLabel("TTS Provider:"), 0, 0)
         grid.addWidget(self.tts_combo, 0, 1)
         grid.addWidget(QLabel("Speech Recognition:"), 0, 2)
         grid.addWidget(self.stt_combo, 0, 3)
@@ -968,6 +977,11 @@ class VoiceAssistantView(QWidget):
         grid.addWidget(self.pitch_lbl, 2, 0)
         grid.addWidget(self.pitch_slider, 2, 1)
         grid.addWidget(self.noise_chk, 2, 2, 1, 2)
+
+        grid.addWidget(QLabel("Voice Gender:"), 3, 0)
+        grid.addWidget(self.gender_combo, 3, 1)
+        grid.addWidget(QLabel("Wake Phrase:"), 3, 2)
+        grid.addWidget(self.wake_input, 3, 3)
         tuning.body_layout.addLayout(grid)
         layout.addWidget(tuning)
 
@@ -1083,10 +1097,14 @@ class VoiceAssistantView(QWidget):
     def _push_config(self) -> None:
         if self._syncing:
             return
+        wake_val = self.wake_input.text().strip() or "Hey Baby"
+        self.wake_btn.setText(f'Arm "{wake_val}"')
         try:
             self.api_client.update_voice_config(
                 tts_provider=self.tts_combo.currentData(),
                 stt_provider=self.stt_combo.currentData(),
+                voice_gender=self.gender_combo.currentData(),
+                wake_phrase=wake_val,
                 emotion=self.emotion_combo.currentData(),
                 speed=round(self.speed_slider.value() / 100.0, 2),
                 pitch_hz=self.pitch_slider.value(),
@@ -1141,13 +1159,15 @@ class VoiceAssistantView(QWidget):
             return
         state = str(status.get("state", "idle"))
         self.orb.set_state(state)
+        wake_phrase = str((status.get("config") or {}).get("wake_phrase") or self.wake_input.text().strip() or "Hey Baby")
+        gender = str((status.get("config") or {}).get("voice_gender") or "female").title()
         state_labels = {
             "idle": ("Idle (On-Demand Ready)", "muted"),
-            "armed_wake_word": ('Armed — Say "Hey Aspirant"', "accent"),
+            "armed_wake_word": (f'Armed — Say "{wake_phrase}"', "accent"),
             "listening": ("Listening Continuously...", "info"),
             "transcribing": ("Transcribing Speech...", "info"),
             "thinking": ("Thinking...", "warn"),
-            "speaking": ("Speaking (Female Neural Voice)...", "ok"),
+            "speaking": (f"Speaking ({gender} Neural Voice)...", "ok"),
         }
         label, tone = state_labels.get(state, (state.title(), "info"))
         self.header.badge.set_tone(tone, state.upper())

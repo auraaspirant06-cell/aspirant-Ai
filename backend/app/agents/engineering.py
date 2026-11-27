@@ -6,6 +6,8 @@ import re
 from typing import Any
 
 from backend.app.ai.system_prompt import (
+    EXTENDED_CODING_LANGUAGES,
+    EXTENDED_DEVOPS_PLATFORMS,
     PROJECT_DELIVERABLES,
     SUPPORTED_CODING_STACK,
     SUPPORTED_DEVOPS_PLATFORMS,
@@ -41,6 +43,11 @@ _STACK_SNIPPETS: dict[str, tuple[str, str, str, int, str]] = {
     "angular": ("src/app/app.component.ts", "package.json", '{"name":"ng-app","dependencies":{"@angular/core":"^19.0.0"}}\n', 4200, "export class AppComponent {}\n"),
     "php": ("public/index.php", "composer.json", '{"require":{"php":"^8.3"}}\n', 8080, '<?php echo json_encode(["status"=>"ok"]);\n'),
     "laravel": ("routes/api.php", "composer.json", '{"require":{"php":"^8.3","laravel/framework":"^11.0"}}\n', 8080, '<?php Route::get("/health", fn () => ["status"=>"ok"]);\n'),
+    "sql": ("db/schema.sql", "migrations/001_init.sql", "-- SQL Schema Migration Package\n", 5432, "CREATE TABLE IF NOT EXISTS users (id SERIAL PRIMARY KEY, email TEXT UNIQUE NOT NULL);\n"),
+    "swift": ("Sources/App/main.swift", "Package.swift", "// swift-tools-version:5.10\nimport PackageDescription\nlet package = Package(name: \"AspirantApp\")\n", 8080, "print(\"Aspirant Swift service ready\")\n"),
+    "dart": ("bin/server.dart", "pubspec.yaml", "name: aspirant_app\nenvironment:\n  sdk: '>=3.4.0 <4.0.0'\n", 8080, "void main() => print('Aspirant Dart service ready');\n"),
+    "shell": ("scripts/deploy.sh", ".env.example", "APP_ENV=production\n", 8080, "#!/usr/bin/env bash\nset -euo pipefail\necho \"Aspirant Shell helper ready\"\n"),
+    "powershell": ("scripts/Start-App.ps1", ".env.example", "APP_ENV=production\n", 8080, "$ErrorActionPreference = 'Stop'\nWrite-Host 'Aspirant PowerShell automation ready'\n"),
 }
 
 
@@ -58,6 +65,7 @@ def generate_project_deliverables(
         "project_name": project_name,
         "stack": key,
         "supported_stacks": list(SUPPORTED_CODING_STACK),
+        "extended_languages": list(EXTENDED_CODING_LANGUAGES),
         "deliverables": list(PROJECT_DELIVERABLES),
         "folder_structure": (
             f"{slug}/\n  {entry}\n  {deps_file}\n  .env.example\n  Dockerfile\n"
@@ -92,12 +100,13 @@ def generate_devops_deployment_plan(
 ) -> dict[str, Any]:
     """Generate installation, Docker, Nginx reverse proxy, SSL, domain, env, and monitoring plan."""
     plat = next(
-        (p for p in SUPPORTED_DEVOPS_PLATFORMS if p.lower() == platform.strip().lower()),
+        (p for p in EXTENDED_DEVOPS_PLATFORMS if p.lower() == platform.strip().lower()),
         platform.strip() or "Docker",
     )
     return {
         "platform": plat,
         "supported_platforms": list(SUPPORTED_DEVOPS_PLATFORMS),
+        "extended_platforms": list(EXTENDED_DEVOPS_PLATFORMS),
         "deployment_executed": execution_confirmed,
         "confirmation_required": not execution_confirmed,
         "status": "completed" if execution_confirmed else "awaiting_user_execution_confirmation",

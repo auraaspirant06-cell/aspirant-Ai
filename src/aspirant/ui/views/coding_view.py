@@ -114,6 +114,9 @@ class CodingStudioView(QWidget):
         self.lang_combo = QComboBox()
         for lang in SUPPORTED_CODE_LANGUAGES:
             self.lang_combo.addItem(lang.upper(), lang)
+        self.platform_combo = QComboBox()
+        for plat in ("Azure", "Ubuntu VPS", "Docker", "Kubernetes", "AWS", "DigitalOcean", "Hetzner", "Google Cloud", "Oracle Cloud", "Nginx", "Cloudflare"):
+            self.platform_combo.addItem(plat, plat)
         self.explain_lang_combo = QComboBox()
         self.explain_lang_combo.addItem("Explain in Hinglish", "hinglish")
         self.explain_lang_combo.addItem("Explain in Hindi", "hi")
@@ -135,6 +138,7 @@ class CodingStudioView(QWidget):
         exp_btn.clicked.connect(self._explain_code)
         ai_top.addWidget(QLabel("Language:"))
         ai_top.addWidget(self.lang_combo)
+        ai_top.addWidget(self.platform_combo)
         ai_top.addWidget(self.explain_lang_combo)
         ai_top.addStretch(1)
         ai_top.addWidget(gen_btn)
@@ -296,11 +300,12 @@ class CodingStudioView(QWidget):
 
     def _generate_devops_plan(self) -> None:
         name = Path(self._root()).name or "aspirant-app"
+        plat = str(self.platform_combo.currentData() or "Azure")
         try:
             res = self.api_client._request(
                 "POST",
                 "/api/v1/coding/deploy-guide",
-                json={"app_name": name, "platform": "Ubuntu VPS", "execution_confirmed": False},
+                json={"app_name": name, "platform": plat, "execution_confirmed": False},
             )
             self._show(
                 f"Status: {res['status']} (Confirmed: {res['deployment_executed']})\n"

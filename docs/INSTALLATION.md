@@ -67,3 +67,19 @@ cd mobile
 flutter pub get
 flutter run --dart-define=ASPIRANT_API_URL=http://10.0.2.2:8000/api/v1
 ```
+
+## 6. One-Click Operational Scripts (`scripts/`)
+- Full setup (Python + Alembic + Frontend):
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\setup.ps1
+```
+- Launch Desktop / Web / Ecosystem (optional `-RegisterStartup` / `-UnregisterStartup` Windows Startup shortcut toggle):
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\start.ps1 -Mode desktop
+```
+- Health Check & Clean Stop:
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\health-check.ps1
+powershell -ExecutionPolicy Bypass -File .\scripts\stop.ps1
+powershell -ExecutionPolicy Bypass -File .\scripts\update.ps1
+```

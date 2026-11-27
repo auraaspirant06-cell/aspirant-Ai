@@ -20,6 +20,7 @@ from PySide6.QtWidgets import (
 
 from aspirant.ui.theme import PALETTE
 from aspirant.ui.widgets.glass import GlassCard, SectionHeader, StatTile, StatusPill
+from aspirant.ui.widgets.robot_widget import Robot3DWidget
 
 
 class HomeDashboardView(QWidget):
@@ -60,9 +61,12 @@ class HomeDashboardView(QWidget):
         )
         self.root_layout.addWidget(self.header)
 
-        # Hero Status Card
+        # Hero Status Card + Interactive 3D Robot Core
         hero = GlassCard()
         hero_row = QHBoxLayout()
+        self.robot_widget = Robot3DWidget()
+        hero_row.addWidget(self.robot_widget)
+
         left_col = QVBoxLayout()
         left_col.setSpacing(4)
         self.assistant_status_lbl = QLabel("Assistant Status: Ready & Listening on Command")
@@ -189,6 +193,10 @@ class HomeDashboardView(QWidget):
     def _handle_restricted_click(self) -> None:
         self._on_toggle_restricted(not self._restricted_active)
 
+    def closeEvent(self, event) -> None:  # noqa: N802
+        self.robot_widget.shutdown()
+        super().closeEvent(event)
+
     def update_state(self, overview: dict[str, Any], audit_items: list[dict[str, Any]]) -> None:
         """Refresh all dashboard panels from live backend JSON."""
         telemetry = overview.get("telemetry", {})
@@ -203,12 +211,25 @@ class HomeDashboardView(QWidget):
         if stopped:
             self.header.badge.set_tone("danger", "EMERGENCY STOP")
             self.assistant_status_lbl.setText("Assistant Status: HALTED — Emergency Stop Engaged")
+            self.robot_widget.set_robot_state("ERROR", status_text="Emergency Stop Active")
         elif restricted:
             self.header.badge.set_tone("warn", "RESTRICTED")
             self.assistant_status_lbl.setText("Assistant Status: Active (Restricted Read-Only Mode)")
+            self.robot_widget.set_robot_state("IDLE", status_text="Restricted Safe Lock")
         else:
             self.header.badge.set_tone("ok", "ONLINE")
             self.assistant_status_lbl.setText("Assistant Status: Online & Permission-Guarded")
+            voice_state = str((overview.get("voice") or {}).get("state", "idle")).lower()
+            robot_state_map = {
+                "listening": "LISTENING",
+                "transcribing": "LISTENING",
+                "thinking": "THINKING",
+                "speaking": "SPEAKING",
+            }
+            mapped_robot = robot_state_map.get(voice_state, "IDLE")
+            self.robot_widget.set_robot_state(
+                mapped_robot, status_text=str(overview.get("active_task", "Ready ('Hey Baby')"))
+            )
 
         self.active_task_lbl.setText(f"Active Task: {overview.get('active_task', 'Idle')}")
         audio = telemetry.get("audio", {})

@@ -11,10 +11,12 @@ import { ecosystemApi } from "@/lib/api";
 const STACK_OPTIONS = [
   "FastAPI", "Python", "Django", "Flask", "Go", "Rust", "Java", "Kotlin",
   "C#", "Node.js", "TypeScript", "React", "Next.js", "Vue", "Angular", "PHP", "Laravel",
+  "SQL", "Swift", "Dart", "Shell", "PowerShell",
 ];
 
 const DEVOPS_PLATFORMS = [
-  "Ubuntu VPS", "Docker", "Kubernetes", "AWS", "Azure", "Google Cloud", "Oracle Cloud", "Nginx", "Cloudflare",
+  "Azure", "Ubuntu VPS", "Docker", "Kubernetes", "AWS", "Google Cloud", "Oracle Cloud",
+  "DigitalOcean", "Hetzner", "Nginx", "Cloudflare",
 ];
 
 export default function AgentsPage() {
@@ -102,7 +104,7 @@ export default function AgentsPage() {
 
               <div>
                 <label htmlFor="proj-stack-select" className="text-[11px] text-adaptive-muted">
-                  Stack (17 Supported)
+                  Stack (22 Supported)
                 </label>
                 <select
                   id="proj-stack-select"
@@ -118,7 +120,7 @@ export default function AgentsPage() {
 
               <div>
                 <label htmlFor="devops-platform-select" className="text-[11px] text-adaptive-muted">
-                  DevOps Platform (9 Supported)
+                  DevOps Platform (11 Supported)
                 </label>
                 <select
                   id="devops-platform-select"

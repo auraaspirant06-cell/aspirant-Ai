@@ -18,7 +18,8 @@ from aspirant.voice.profiles import (
     EMOTION_STYLE_PROMPTS,
     VoiceConfig,
     format_edge_prosody,
-    resolve_edge_female_voice,
+    resolve_edge_voice,
+    resolve_gemini_voice,
 )
 
 
@@ -32,7 +33,7 @@ class TTSResult:
 
 
 class EdgeFemaleTTSProvider:
-    """Free natural female neural voices via Microsoft Edge TTS."""
+    """Free natural female & male Indian neural voices via Microsoft Edge TTS."""
 
     provider_id = "edge-tts"
 
@@ -40,7 +41,7 @@ class EdgeFemaleTTSProvider:
         self, text: str, language_code: str, config: VoiceConfig
     ) -> TTSResult:
         t0 = time.perf_counter()
-        voice = resolve_edge_female_voice(language_code, config.voice_override)
+        voice = resolve_edge_voice(language_code, config.voice_gender, config.voice_override)
         rate_str, pitch_str = format_edge_prosody(config.speed, config.pitch_hz)
         communicate = edge_tts.Communicate(
             text=text,
@@ -82,8 +83,9 @@ class GeminiFemaleTTSProvider:
         if not self.api_key:
             raise RuntimeError("GEMINI_API_KEY is not configured for Gemini TTS.")
         t0 = time.perf_counter()
-        voice = config.voice_override if config.voice_override not in ("auto", "") else "Kore"
-        style_desc = EMOTION_STYLE_PROMPTS.get(config.emotion, EMOTION_STYLE_PROMPTS["friendly"])
+        voice = resolve_gemini_voice(config.voice_gender, config.voice_override)
+        gender_label = "male" if config.voice_gender.strip().lower() == "male" else "female"
+        style_desc = f"{gender_label}, {EMOTION_STYLE_PROMPTS.get(config.emotion, EMOTION_STYLE_PROMPTS['friendly'])}"
         client = genai.Client(api_key=self.api_key, http_options={"api_version": "v1beta"})
         interaction = await asyncio.wait_for(
             client.aio.interactions.create(
@@ -141,10 +143,11 @@ class WindowsSAPITTSProvider:
             try:
                 rate_val = max(-5, min(5, int(round((config.speed - 1.0) * 10))))
                 safe_text = text.replace("'", "''")
+                sapi_gender = "Male" if config.voice_gender.strip().lower() == "male" else "Female"
                 ps_script = (
                     "Add-Type -AssemblyName System.Speech; "
                     "$s = New-Object System.Speech.Synthesis.SpeechSynthesizer; "
-                    "$f = $s.GetInstalledVoices() | Where-Object { $_.VoiceInfo.Gender -eq 'Female' } | Select-Object -First 1; "
+                    f"$f = $s.GetInstalledVoices() | Where-Object {{ $_.VoiceInfo.Gender -eq '{sapi_gender}' }} | Select-Object -First 1; "
                     "if ($f) { $s.SelectVoice($f.VoiceInfo.Name) }; "
                     f"$s.Rate = {rate_val}; "
                     f"$s.SetOutputToWaveFile('{wav_path}'); "
@@ -162,10 +165,11 @@ class WindowsSAPITTSProvider:
                 wav_path.unlink(missing_ok=True)
 
         wav_bytes = await asyncio.to_thread(_render_sync)
+        gender_title = "Male" if config.voice_gender.strip().lower() == "male" else "Female"
         return TTSResult(
             audio_bytes=wav_bytes,
             mime_type="audio/wav",
-            voice_name="Windows SAPI5 Female",
+            voice_name=f"Windows SAPI5 {gender_title}",
             provider=self.provider_id,
             latency_ms=(time.perf_counter() - t0) * 1000.0,
         )

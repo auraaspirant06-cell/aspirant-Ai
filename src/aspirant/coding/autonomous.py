@@ -136,3 +136,47 @@ class AutonomousCoder:
             "steps": steps,
             "review": self.git_mgr.pre_deploy_review(root),
         }
+
+    def bootstrap_and_verify_project(
+        self,
+        target_dir: str | Path,
+        project_name: str,
+        stack: str = "fastapi",
+        overwrite: bool = False,
+    ) -> dict[str, Any]:
+        """Full autonomous build flow: scaffold 8-deliverable project, add safe .gitignore, check syntax, init Git & review."""
+        self.permissions.require(Permission.WRITE, f"Bootstrap project '{project_name}' in {target_dir}", category="coding")
+        from aspirant.coding.generator import build_project_blueprint
+
+        blueprint = build_project_blueprint(project_name=project_name, stack=stack)
+        root = Path(target_dir).expanduser().resolve()
+        root.mkdir(parents=True, exist_ok=True)
+        for rel, content in blueprint["files"].items():
+            dest = guard_project_file(root, rel)
+            if dest.exists() and not overwrite:
+                continue
+            dest.parent.mkdir(parents=True, exist_ok=True)
+            dest.write_text(content, encoding="utf-8")
+
+        gitignore = root / ".gitignore"
+        if not gitignore.exists():
+            gitignore.write_text(".env\n.venv/\n__pycache__/\nnode_modules/\n*.pem\n*.key\n", encoding="utf-8")
+
+        syntax = self.sandbox.check_syntax(root)
+        self.git_mgr.init_repo(root)
+        review = self.git_mgr.pre_deploy_review(root)
+        self.audit_logger.log(
+            category="coding",
+            action=f"Bootstrapped & verified {stack} project '{project_name}' at {root.name}",
+            permission="WRITE",
+            decision="executed",
+            status="ok",
+        )
+        return {
+            "status": "verified",
+            "root": str(root),
+            "stack": blueprint["stack"],
+            "syntax": syntax,
+            "review": review,
+            "deliverables": blueprint["deliverables"],
+        }
