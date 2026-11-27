@@ -258,6 +258,56 @@ export const ecosystemApi = {
     ),
   voiceStatus: (token: string) =>
     requestJson<VoiceStatusResponse>("/voice/status", { method: "GET" }, token),
+  generateProject: (
+    token: string,
+    body: { project_name: string; stack: string; description?: string }
+  ) =>
+    requestJson<{
+      project_name: string;
+      stack: string;
+      deliverables: string[];
+      folder_structure: string;
+      environment_variables: string;
+      docker_setup: string;
+      api_documentation: string;
+      database_structure: string;
+      deployment_guide: string;
+    }>("/agents/project/generate", { method: "POST", body: JSON.stringify(body) }, token),
+  devopsPlan: (
+    token: string,
+    body: {
+      app_name?: string;
+      platform: string;
+      domain?: string;
+      app_port?: number;
+      execution_confirmed?: boolean;
+    }
+  ) =>
+    requestJson<{
+      platform: string;
+      status: string;
+      confirmation_required: boolean;
+      message: string;
+      docker_configuration: string;
+      reverse_proxy_configuration: string;
+      ssl_setup: string;
+      monitoring_suggestions: string[];
+    }>("/agents/devops/plan", { method: "POST", body: JSON.stringify(body) }, token),
+  debugLogs: (token: string, body: { error_log: string; code_context?: string }) =>
+    requestJson<{
+      root_cause: string;
+      issue_explanation: string;
+      fix: string;
+      corrected_code: string;
+      prevention_methods: string[];
+    }>("/agents/debug", { method: "POST", body: JSON.stringify(body) }, token),
+  learnConcept: (token: string, body: { concept: string; level?: string }) =>
+    requestJson<{
+      concept: string;
+      simple_explanation: string;
+      real_world_analogy: string;
+      step_by_step: string[];
+    }>("/agents/learn", { method: "POST", body: JSON.stringify(body) }, token),
   integrationsCatalog: (token: string) =>
     requestJson<{
       connectors: Array<{

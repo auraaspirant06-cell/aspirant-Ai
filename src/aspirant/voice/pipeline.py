@@ -29,7 +29,7 @@ from aspirant.voice.audio_io import (
 from aspirant.voice.diagnostics import AudioDiagnosticsManager, get_diagnostics_manager
 from aspirant.voice.gemini_live import GeminiLiveSessionManager
 from aspirant.voice.profiles import VoiceConfig
-from aspirant.voice.wakeword import match_wake_word
+from aspirant.voice.wakeword import build_voice_confirmation, match_wake_word
 
 
 def _resample_int16_to_16k(mono_i16: np.ndarray, src_rate: int) -> bytes:
@@ -204,9 +204,14 @@ class VoiceAssistantEngine:
         """Handle transcribed text through ChatService and optionally speak the female response."""
         self.permissions.require(Permission.READ, "Process voice command", category="voice")
         self.last_transcript = transcript.strip()
+        confirmation = build_voice_confirmation(self.last_transcript)
         self.event_bus.publish(
             "voice.transcript.final",
-            {"transcript": self.last_transcript, "state": "thinking"},
+            {
+                "transcript": self.last_transcript,
+                "confirmation": confirmation,
+                "state": "thinking",
+            },
         )
         self._set_state("thinking")
 
@@ -243,6 +248,7 @@ class VoiceAssistantEngine:
         self._set_state(next_state)
         payload = {
             "transcript": self.last_transcript,
+            "confirmation": confirmation,
             "reply": reply_text,
             "language": result["detected_language"],
             "persona": self.persona_id,

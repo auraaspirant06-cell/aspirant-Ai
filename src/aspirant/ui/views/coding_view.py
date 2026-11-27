@@ -36,6 +36,7 @@ class CodingStudioView(QWidget):
         outer.addWidget(scroll)
 
         body = QWidget()
+        body.setObjectName("ScrollContent")
         scroll.setWidget(body)
         layout = QVBoxLayout(body)
         layout.setContentsMargins(24, 20, 24, 24)
@@ -43,7 +44,7 @@ class CodingStudioView(QWidget):
 
         self.header = SectionHeader(
             "Coding Studio",
-            "Project indexer • Polyglot APIs/Bots/Web • Sandboxed pytest • Bilingual explainer • Git",
+            "17+ Stacks • 8-Deliverable Project Generator • 9-Platform DevOps • 5-Step Debugger & Learning Mode",
             badge_text="ENGINEER",
             tone="accent",
         )
@@ -120,6 +121,15 @@ class CodingStudioView(QWidget):
         gen_btn = QPushButton("Generate Code")
         gen_btn.setProperty("variant", "primary")
         gen_btn.clicked.connect(self._generate_code)
+        pack_btn = QPushButton("8-File Project Pack")
+        pack_btn.setProperty("variant", "ghost")
+        pack_btn.clicked.connect(self._generate_project_pack)
+        devops_btn = QPushButton("DevOps Plan")
+        devops_btn.setProperty("variant", "ghost")
+        devops_btn.clicked.connect(self._generate_devops_plan)
+        debug_btn = QPushButton("Debug Log")
+        debug_btn.setProperty("variant", "ghost")
+        debug_btn.clicked.connect(self._debug_log)
         exp_btn = QPushButton("Explain Code")
         exp_btn.setProperty("variant", "ghost")
         exp_btn.clicked.connect(self._explain_code)
@@ -128,6 +138,9 @@ class CodingStudioView(QWidget):
         ai_top.addWidget(self.explain_lang_combo)
         ai_top.addStretch(1)
         ai_top.addWidget(gen_btn)
+        ai_top.addWidget(pack_btn)
+        ai_top.addWidget(devops_btn)
+        ai_top.addWidget(debug_btn)
         ai_top.addWidget(exp_btn)
         ai_card.body_layout.addLayout(ai_top)
 
@@ -260,5 +273,60 @@ class CodingStudioView(QWidget):
                 timeout=45.0,
             )
             self._show(res["explanation"], "ok", res["language"].upper())
+        except Exception as exc:
+            self._show(str(exc), "warn", "ERROR")
+
+    def _generate_project_pack(self) -> None:
+        stack = str(self.lang_combo.currentData() or "fastapi")
+        name = Path(self._root()).name or "aspirant-service"
+        try:
+            res = self.api_client._request(
+                "POST",
+                "/api/v1/coding/project-pack",
+                json={"project_name": name, "stack": stack},
+            )
+            self._show(
+                f"Deliverables ({len(res['deliverables'])}): {', '.join(res['deliverables'])}\n\n"
+                f"Folder Structure:\n{res['folder_structure']}\n\nAPI Docs:\n{res['api_documentation']}\n\nDB Schema:\n{res['database_structure']}",
+                "ok",
+                stack.upper(),
+            )
+        except Exception as exc:
+            self._show(str(exc), "warn", "ERROR")
+
+    def _generate_devops_plan(self) -> None:
+        name = Path(self._root()).name or "aspirant-app"
+        try:
+            res = self.api_client._request(
+                "POST",
+                "/api/v1/coding/deploy-guide",
+                json={"app_name": name, "platform": "Ubuntu VPS", "execution_confirmed": False},
+            )
+            self._show(
+                f"Status: {res['status']} (Confirmed: {res['deployment_executed']})\n"
+                f"{res['message']}\n\nNginx:\n{res['reverse_proxy_configuration']}\n\nSSL:\n{res['ssl_setup']}",
+                "ok",
+                "DEVOPS READY",
+            )
+        except Exception as exc:
+            self._show(str(exc), "warn", "ERROR")
+
+    def _debug_log(self) -> None:
+        log = self.code_editor.toPlainText().strip()
+        if not log:
+            self._show("Paste an error log / traceback above to analyze root cause.", "warn", "INPUT")
+            return
+        try:
+            res = self.api_client._request(
+                "POST",
+                "/api/v1/coding/debug",
+                json={"error_log": log},
+            )
+            self._show(
+                f"Root Cause: {res['root_cause']}\nIssue: {res['issue_explanation']}\nFix: {res['fix']}\n\n"
+                f"Prevention:\n- " + "\n- ".join(res["prevention_methods"]),
+                "ok",
+                "DIAGNOSED",
+            )
         except Exception as exc:
             self._show(str(exc), "warn", "ERROR")

@@ -6,6 +6,12 @@ from fastapi import APIRouter, Depends
 from pydantic import BaseModel, Field
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from backend.app.agents.engineering import (
+    analyze_debug_error_log,
+    build_learning_explanation,
+    generate_devops_deployment_plan,
+    generate_project_deliverables,
+)
 from backend.app.ai.reasoning import DeepReasoningEngine
 from backend.app.api.deps import AuthenticatedPrincipal, get_container, get_current_user, get_db_session
 from backend.app.core.container import EcosystemContainer
@@ -31,6 +37,30 @@ class FeedbackRequest(BaseModel):
     intent: str = "general"
     rating: int = Field(default=5, ge=1, le=5)
     correction_note: str = ""
+
+
+class ProjectGenerateRequest(BaseModel):
+    project_name: str = Field(min_length=1)
+    stack: str = "FastAPI"
+    description: str = "Production application"
+
+
+class DevOpsPlanRequest(BaseModel):
+    app_name: str = "aspirant-app"
+    platform: str = "Ubuntu VPS"
+    domain: str = "app.example.com"
+    app_port: int = Field(default=8000, ge=1, le=65535)
+    execution_confirmed: bool = False
+
+
+class DebugLogRequest(BaseModel):
+    error_log: str = Field(min_length=2)
+    code_context: str = ""
+
+
+class LearnConceptRequest(BaseModel):
+    concept: str = Field(min_length=1)
+    level: str = "beginner-to-intermediate"
 
 
 @router.get("/catalog")
@@ -145,3 +175,49 @@ async def submit_feedback(
         "rating": row.rating,
         "learned_across_sessions": bool(row.correction_note),
     }
+
+
+@router.post("/project/generate")
+async def generate_project(
+    body: ProjectGenerateRequest,
+    principal: AuthenticatedPrincipal = Depends(get_current_user),
+) -> dict:
+    """Generate all 8 deliverables (Folder Structure, Source Code, Env, Docker, README, API Docs, DB Schema, Deployment Guide)."""
+    return generate_project_deliverables(
+        project_name=body.project_name,
+        stack=body.stack,
+        description=body.description,
+    )
+
+
+@router.post("/devops/plan")
+async def devops_deployment_plan(
+    body: DevOpsPlanRequest,
+    principal: AuthenticatedPrincipal = Depends(get_current_user),
+) -> dict:
+    """Generate deployment automation setup across 9 platforms; never marks deployed unless confirmed."""
+    return generate_devops_deployment_plan(
+        app_name=body.app_name,
+        platform=body.platform,
+        domain=body.domain,
+        app_port=body.app_port,
+        execution_confirmed=body.execution_confirmed,
+    )
+
+
+@router.post("/debug")
+async def debug_logs(
+    body: DebugLogRequest,
+    principal: AuthenticatedPrincipal = Depends(get_current_user),
+) -> dict:
+    """Analyze error logs first and return 5-step debugging diagnosis + fix + prevention."""
+    return analyze_debug_error_log(error_log=body.error_log, code_context=body.code_context)
+
+
+@router.post("/learn")
+async def learn_concept(
+    body: LearnConceptRequest,
+    principal: AuthenticatedPrincipal = Depends(get_current_user),
+) -> dict:
+    """Explain technical concepts in Learning Mode (simple core, analogy, example, step-by-step)."""
+    return build_learning_explanation(concept=body.concept, level=body.level)

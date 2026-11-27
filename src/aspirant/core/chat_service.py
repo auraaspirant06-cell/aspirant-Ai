@@ -100,6 +100,7 @@ class ChatService:
             style=style,
             language_override=language_override,
             memory_hints=hints,
+            user_text=user_text,
         )
         req = ChatRequest(
             messages=chat_messages,

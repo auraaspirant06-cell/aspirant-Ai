@@ -8,6 +8,9 @@ from typing import Any
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
+from aspirant.coding.devops import build_deployment_guide
+from aspirant.coding.generator import build_project_blueprint
+from aspirant.coding.sandbox import analyze_error_log
 from aspirant.providers.base import ProviderError
 from aspirant.security.permissions import Permission, PermissionDeniedError
 
@@ -57,6 +60,32 @@ class AutonomousCodeRequest(BaseModel):
     target_file: str | None = None
     max_iterations: int = 3
     approval_id: str | None = None
+
+
+class ProjectPackRequest(BaseModel):
+    project_name: str
+    stack: str = "FastAPI"
+    target_dir: str | None = None
+    overwrite: bool = False
+
+
+class DeployGuideRequest(BaseModel):
+    app_name: str = "aspirant-app"
+    platform: str = "Ubuntu VPS"
+    domain: str = "app.example.com"
+    app_port: int = 8000
+    execution_confirmed: bool = False
+
+
+class DebugLogRequest(BaseModel):
+    error_log: str
+    code_context: str = ""
+
+
+class LearnConceptRequest(BaseModel):
+    concept: str
+    level: str = "beginner-to-intermediate"
+    provider_id: str = "auto"
 
 
 def create_coding_router(container: Any, auth_dependency: Any) -> APIRouter:
@@ -195,6 +224,49 @@ def create_coding_router(container: Any, auth_dependency: Any) -> APIRouter:
                 approval_id=body.approval_id,
             )
         except (PermissionDeniedError, PermissionError) as exc:
+            raise HTTPException(status_code=403, detail=str(exc)) from exc
+
+    @router.post("/project-pack")
+    async def project_pack(body: ProjectPackRequest) -> dict[str, Any]:
+        try:
+            container.permissions.require(Permission.READ, "Generate 8-deliverable project pack", category="coding")
+            if body.target_dir:
+                return container.coding_generator.scaffold_full_project_pack(
+                    body.target_dir, body.project_name, stack=body.stack, overwrite=body.overwrite
+                )
+            return build_project_blueprint(project_name=body.project_name, stack=body.stack)
+        except (PermissionDeniedError, PermissionError) as exc:
+            raise HTTPException(status_code=403, detail=str(exc)) from exc
+
+    @router.post("/deploy-guide")
+    async def deploy_guide(body: DeployGuideRequest) -> dict[str, Any]:
+        try:
+            container.permissions.require(Permission.READ, "Generate DevOps deployment guide", category="coding")
+            return build_deployment_guide(
+                app_name=body.app_name,
+                platform=body.platform,
+                domain=body.domain,
+                app_port=body.app_port,
+                execution_confirmed=body.execution_confirmed,
+            )
+        except PermissionDeniedError as exc:
+            raise HTTPException(status_code=403, detail=str(exc)) from exc
+
+    @router.post("/debug")
+    async def debug_error_log(body: DebugLogRequest) -> dict[str, Any]:
+        try:
+            container.permissions.require(Permission.READ, "Analyze error log", category="coding")
+            return analyze_error_log(body.error_log, body.code_context)
+        except PermissionDeniedError as exc:
+            raise HTTPException(status_code=403, detail=str(exc)) from exc
+
+    @router.post("/learn")
+    async def learn_concept(body: LearnConceptRequest) -> dict[str, Any]:
+        try:
+            return await container.coding_explainer.learn_concept(
+                body.concept, level=body.level, provider_id=body.provider_id
+            )
+        except PermissionDeniedError as exc:
             raise HTTPException(status_code=403, detail=str(exc)) from exc
 
     return router

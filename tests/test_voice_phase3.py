@@ -81,8 +81,25 @@ def test_wake_word_detection_and_noise_vad() -> None:
     assert matched_hi is True
     assert "आज का काम" in cmd_hi
 
+    for phrase, expected_tail in (
+        ("Hey Aspirant, create a FastAPI project.", "create a FastAPI project"),
+        ("Aspirant, explain Docker.", "explain Docker"),
+        ("Hello Aspirant deploy this app", "deploy this app"),
+    ):
+        ok, tail = match_wake_word(phrase)
+        assert ok is True
+        assert expected_tail.lower() in tail.lower()
+
+    matched_unrelated, _ = match_wake_word("What does an aspirant study for exams?")
+    assert matched_unrelated is False
+
     matched_no, _ = match_wake_word("Open calculator please")
     assert matched_no is False
+
+    from aspirant.voice.wakeword import build_voice_confirmation
+
+    assert "Boss" in build_voice_confirmation("create a FastAPI project")
+    assert "Preparing deployment steps" in build_voice_confirmation("deploy this app")
 
     # Silence PCM frame should not trigger speech
     vad = NoiseAdaptiveVAD(aggressiveness=2, noise_suppression=True)

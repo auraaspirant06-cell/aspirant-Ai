@@ -7,6 +7,7 @@ from typing import Any
 from backend.app.agents.orchestrator import AgentOrchestrator
 from backend.app.ai.rag import RAGPipeline
 from backend.app.ai.router import MultiModelAIRouter
+from backend.app.ai.system_prompt import build_aspirant_core_prompt, detect_interaction_mode
 from backend.app.domain.entities import AgentRole, MemoryLayer, ProductSource
 from backend.app.memory.memory_service import MemoryService
 from backend.app.services.productivity_service import ProductivityService
@@ -40,6 +41,10 @@ class MJService:
             source_app=ProductSource.MJ,
         )
         recall_snippets = [m["content"][:140] for m in bundle["semantic_memories"][:3]]
+        sys_prompt = build_aspirant_core_prompt(
+            owner_preferred_address="Boss",
+            mode=detect_interaction_mode(message),
+        )
         res = await self._router.generate(
             prompt=(
                 f"User profile: {bundle['user_profile']}\n"
@@ -47,7 +52,7 @@ class MJService:
                 f"Recalled context: {recall_snippets}\n"
                 f"User message ({mode}): {message}"
             ),
-            system_instruction="Respond like MJ: empathetic, razor-sharp, context-aware human companion.",
+            system_instruction=sys_prompt,
             task_type="general" if mode == "companion" else "research",
         )
         await self._memory.record_conversation_turn(

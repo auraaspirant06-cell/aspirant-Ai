@@ -43,6 +43,43 @@ def parse_terminal_errors(output: str) -> list[dict[str, Any]]:
     return errors
 
 
+def analyze_error_log(error_log: str, code_context: str = "") -> dict[str, Any]:
+    """Perform 5-step Debugging Mode analysis before proposing fixes.
+
+    Returns: root_cause, issue_explanation, fix, corrected_code, prevention_methods.
+    """
+    log = error_log.strip()
+    parsed = parse_terminal_errors(log)
+    if parsed:
+        first = parsed[0]
+        root_cause = f"{first['error_type']} at line {first['line']}: {first['message']}"
+        issue_explanation = f"Detected {first['error_type']} in '{first['file'] or 'module'}': {first['hint']}"
+        fix = first["hint"]
+    elif "traceback" in log.lower() or "error" in log.lower():
+        tail = log.splitlines()[-1][:160] if log else "Unknown error"
+        root_cause = f"Runtime error tail: {tail}"
+        issue_explanation = "Analyzed stack trace structure and exception context."
+        fix = "Isolate the failing call with explicit input validation and reproduce in a minimal unit test."
+    else:
+        root_cause = "No structured exception line matched; static log inspection completed."
+        issue_explanation = "Share full traceback or surrounding function for deeper line-level diagnosis."
+        fix = "Enable debug logging and verify inputs/dependencies."
+
+    prevention_methods = [
+        "Add unit tests covering invalid inputs, None values, and error boundaries.",
+        "Run syntax & type checks cleanly before execution (`pytest` / `tsc --noEmit`).",
+    ]
+    return {
+        "analyzed_first": True,
+        "parsed_errors": parsed,
+        "root_cause": root_cause,
+        "issue_explanation": issue_explanation,
+        "fix": fix,
+        "corrected_code": code_context.strip() or "# Validate inputs & handle exception explicitly around the failing site.",
+        "prevention_methods": prevention_methods,
+    }
+
+
 class CodingSandbox:
     """Runs bounded code checks and automated test suites inside a project boundary."""
 

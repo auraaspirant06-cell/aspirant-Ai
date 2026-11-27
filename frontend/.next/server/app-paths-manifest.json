@@ -4,10 +4,10 @@
   "/integrations/page": "app/integrations/page.js",
   "/max/page": "app/max/page.js",
   "/memory/page": "app/memory/page.js",
-  "/mj/page": "app/mj/page.js",
   "/nova/page": "app/nova/page.js",
   "/page": "app/page.js",
   "/security/page": "app/security/page.js",
+  "/mj/page": "app/mj/page.js",
   "/settings/page": "app/settings/page.js",
   "/voice/page": "app/voice/page.js"
 }

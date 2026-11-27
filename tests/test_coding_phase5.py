@@ -157,4 +157,65 @@ def test_coding_studio_scaffold_test_git_and_autonomous_fix(tmp_path: Path) -> N
     qt = QApplication.instance() or QApplication([])
     ui = CodingStudioView(api_client=None)  # type: ignore[arg-type]
     assert ui.template_combo.count() == 4
+    assert ui.lang_combo.count() >= 17
     qt.processEvents()
+
+
+def test_aspirant_prompt_project_generator_devops_debug_and_learning(tmp_path: Path) -> None:
+    from aspirant.coding.devops import build_deployment_guide
+    from aspirant.coding.generator import (
+        SUPPORTED_CODE_LANGUAGES,
+        build_project_blueprint,
+        normalize_code_language,
+    )
+    from aspirant.coding.sandbox import analyze_error_log
+    from aspirant.personality.system_prompt import (
+        OWNER_NAMES,
+        PROJECT_DELIVERABLES,
+        SUPPORTED_CODING_STACK,
+        SUPPORTED_DEVOPS_PLATFORMS,
+        build_aspirant_core_prompt,
+        detect_interaction_mode,
+    )
+
+    assert "Harsh" in OWNER_NAMES and "Boss" in OWNER_NAMES
+    assert len(SUPPORTED_CODING_STACK) == 17
+    assert len(PROJECT_DELIVERABLES) == 8
+    assert len(SUPPORTED_DEVOPS_PLATFORMS) == 9
+    assert normalize_code_language("C#") == "csharp"
+    assert normalize_code_language("Next.js") == "nextjs"
+    assert "rust" in SUPPORTED_CODE_LANGUAGES and "laravel" in SUPPORTED_CODE_LANGUAGES
+
+    prompt = build_aspirant_core_prompt(mode="devops")
+    assert "Aspirant AI" in prompt
+    assert "Never pretend an action succeeded" in prompt
+    assert "Do not claim deployment is complete unless the owner confirms execution" in prompt
+
+    assert detect_interaction_mode("Traceback (most recent call last): ModuleNotFoundError") == "debugging"
+    assert detect_interaction_mode("Deploy this Docker app to AWS behind Nginx") == "devops"
+    assert detect_interaction_mode("Create a FastAPI backend project") == "project_generator"
+    assert detect_interaction_mode("Explain Kubernetes step by step with analogy") == "learning"
+
+    bp = build_project_blueprint(project_name="Demo App", stack="FastAPI")
+    assert len(bp["deliverables"]) == 8
+    assert "Dockerfile" in bp["files"] and "db/schema.sql" in bp["files"] and "docs/DEPLOYMENT.md" in bp["files"]
+
+    dep = build_deployment_guide(app_name="demo", platform="Ubuntu VPS", execution_confirmed=False)
+    assert dep["deployment_executed"] is False and dep["confirmation_required"] is True
+
+    dbg = analyze_error_log("Traceback:\n  File \"main.py\", line 4\nModuleNotFoundError: No module named 'fastapi'")
+    assert dbg["analyzed_first"] is True and "ModuleNotFoundError" in dbg["root_cause"]
+
+    settings = AppSettings(ASPIRANT_DATA_DIR=tmp_path / "data")
+    container = build_container(settings)
+    app = create_app(settings=settings, container=container)
+    headers = {"Authorization": f"Bearer {container.api_token}"}
+    with TestClient(app) as client:
+        p = client.post("/api/v1/coding/project-pack", headers=headers, json={"project_name": "Demo", "stack": "Go"})
+        assert p.status_code == 200 and p.json()["stack"] == "go" and len(p.json()["deliverables"]) == 8
+        d = client.post("/api/v1/coding/deploy-guide", headers=headers, json={"platform": "Cloudflare", "execution_confirmed": False})
+        assert d.status_code == 200 and d.json()["confirmation_required"] is True
+        b = client.post("/api/v1/coding/debug", headers=headers, json={"error_log": "SyntaxError: invalid syntax"})
+        assert b.status_code == 200 and b.json()["analyzed_first"] is True
+        l = client.post("/api/v1/coding/learn", headers=headers, json={"concept": "REST APIs"})
+        assert l.status_code == 200 and l.json()["concept"] == "REST APIs"

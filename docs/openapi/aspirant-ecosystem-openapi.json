@@ -986,6 +986,202 @@
         ]
       }
     },
+    "/api/v1/agents/project/generate": {
+      "post": {
+        "tags": [
+          "Multi-Agent Orchestration"
+        ],
+        "summary": "Generate Project",
+        "description": "Generate all 8 deliverables (Folder Structure, Source Code, Env, Docker, README, API Docs, DB Schema, Deployment Guide).",
+        "operationId": "generate_project_api_v1_agents_project_generate_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProjectGenerateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response Generate Project Api V1 Agents Project Generate Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/agents/devops/plan": {
+      "post": {
+        "tags": [
+          "Multi-Agent Orchestration"
+        ],
+        "summary": "Devops Deployment Plan",
+        "description": "Generate deployment automation setup across 9 platforms; never marks deployed unless confirmed.",
+        "operationId": "devops_deployment_plan_api_v1_agents_devops_plan_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DevOpsPlanRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response Devops Deployment Plan Api V1 Agents Devops Plan Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/agents/debug": {
+      "post": {
+        "tags": [
+          "Multi-Agent Orchestration"
+        ],
+        "summary": "Debug Logs",
+        "description": "Analyze error logs first and return 5-step debugging diagnosis + fix + prevention.",
+        "operationId": "debug_logs_api_v1_agents_debug_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DebugLogRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response Debug Logs Api V1 Agents Debug Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/agents/learn": {
+      "post": {
+        "tags": [
+          "Multi-Agent Orchestration"
+        ],
+        "summary": "Learn Concept",
+        "description": "Explain technical concepts in Learning Mode (simple core, analogy, example, step-by-step).",
+        "operationId": "learn_concept_api_v1_agents_learn_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LearnConceptRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response Learn Concept Api V1 Agents Learn Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
     "/api/v1/productivity/sync": {
       "get": {
         "tags": [
@@ -3441,6 +3637,25 @@
         ],
         "title": "ConnectSocialRequest"
       },
+      "DebugLogRequest": {
+        "properties": {
+          "error_log": {
+            "type": "string",
+            "minLength": 2,
+            "title": "Error Log"
+          },
+          "code_context": {
+            "type": "string",
+            "title": "Code Context",
+            "default": ""
+          }
+        },
+        "type": "object",
+        "required": [
+          "error_log"
+        ],
+        "title": "DebugLogRequest"
+      },
       "DeepReasonRequest": {
         "properties": {
           "objective": {
@@ -3477,6 +3692,39 @@
           "topic"
         ],
         "title": "DeepResearchPlanRequest"
+      },
+      "DevOpsPlanRequest": {
+        "properties": {
+          "app_name": {
+            "type": "string",
+            "title": "App Name",
+            "default": "aspirant-app"
+          },
+          "platform": {
+            "type": "string",
+            "title": "Platform",
+            "default": "Ubuntu VPS"
+          },
+          "domain": {
+            "type": "string",
+            "title": "Domain",
+            "default": "app.example.com"
+          },
+          "app_port": {
+            "type": "integer",
+            "maximum": 65535.0,
+            "minimum": 1.0,
+            "title": "App Port",
+            "default": 8000
+          },
+          "execution_confirmed": {
+            "type": "boolean",
+            "title": "Execution Confirmed",
+            "default": false
+          }
+        },
+        "type": "object",
+        "title": "DevOpsPlanRequest"
       },
       "DeviceIntegrationRequest": {
         "properties": {
@@ -3729,6 +3977,25 @@
         ],
         "title": "LaunchAppRequest"
       },
+      "LearnConceptRequest": {
+        "properties": {
+          "concept": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Concept"
+          },
+          "level": {
+            "type": "string",
+            "title": "Level",
+            "default": "beginner-to-intermediate"
+          }
+        },
+        "type": "object",
+        "required": [
+          "concept"
+        ],
+        "title": "LearnConceptRequest"
+      },
       "LoginRequest": {
         "properties": {
           "email": {
@@ -3960,6 +4227,30 @@
           "web"
         ],
         "title": "ProductSource"
+      },
+      "ProjectGenerateRequest": {
+        "properties": {
+          "project_name": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Project Name"
+          },
+          "stack": {
+            "type": "string",
+            "title": "Stack",
+            "default": "FastAPI"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description",
+            "default": "Production application"
+          }
+        },
+        "type": "object",
+        "required": [
+          "project_name"
+        ],
+        "title": "ProjectGenerateRequest"
       },
       "PushRequest": {
         "properties": {

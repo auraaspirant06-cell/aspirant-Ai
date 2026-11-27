@@ -12,6 +12,7 @@ from PIL import Image
 
 from backend.app.agents.orchestrator import AgentOrchestrator
 from backend.app.ai.router import MultiModelAIRouter
+from backend.app.ai.system_prompt import build_voice_confirmation
 from backend.app.domain.entities import MemoryLayer, ProductSource
 from backend.app.memory.memory_service import MemoryService
 
@@ -19,7 +20,13 @@ from backend.app.memory.memory_service import MemoryService
 class NovaService:
     """Powering NOVA desktop capabilities with safe fallback in containerized Linux environments."""
 
-    WAKE_PHRASES = ("hey nova", "nova listen", "hey aspirant", "ok nova")
+    WAKE_PHRASES = (
+        "hey nova",
+        "nova listen",
+        "ok nova",
+        "hello aspirant",
+        "hey aspirant",
+    )
     HIGH_RISK_PATTERNS = (
         r"\brm\s+-rf\b",
         r"\bformat\b\s+[a-zA-Z]:",
@@ -44,13 +51,16 @@ class NovaService:
         cleaned = re.sub(r"[^\w\s]", " ", transcript.lower()).strip()
         cleaned = re.sub(r"\s+", " ", cleaned)
         matched_phrase = next((p for p in self.WAKE_PHRASES if p in cleaned), None)
+        if not matched_phrase and re.match(r"^aspirant\b", cleaned):
+            matched_phrase = "aspirant"
         if not matched_phrase:
             try:
                 from aspirant.voice.wakeword import match_wake_word
 
-                res = match_wake_word(transcript, wake_words=["hey nova", "hey aspirant"])
-                if getattr(res, "detected", False):
-                    matched_phrase = getattr(res, "matched_phrase", "hey nova")
+                matched, tail = match_wake_word(transcript, wake_phrase="hey nova")
+                if matched:
+                    matched_phrase = "hey nova" if "nova" in cleaned else "aspirant"
+                    return {"detected": True, "matched_phrase": matched_phrase, "command_tail": tail}
             except Exception:
                 pass
         command_tail = ""
@@ -142,6 +152,7 @@ class NovaService:
     async def process_voice_command(self, *, user_id: str, transcript: str) -> dict[str, Any]:
         wake = self.detect_wake_word(transcript)
         objective = wake["command_tail"] or transcript.strip()
+        confirmation = build_voice_confirmation(objective, owner_title="Boss")
         await self._memory.record_conversation_turn(
             user_id=user_id,
             role="user",
@@ -161,9 +172,10 @@ class NovaService:
         )
         return {
             "wake": wake,
+            "confirmation": confirmation,
             "run_id": run.id,
             "selected_agents": run.selected_agents,
-            "response_text": run.final_output,
+            "response_text": f"{confirmation}\n{run.final_output}",
             "tts_voice": "female-natural",
         }
 

@@ -10,6 +10,7 @@ from pydantic import BaseModel, Field
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.app.api.deps import AuthenticatedPrincipal, get_container, get_current_user, get_db_session
+from backend.app.ai.system_prompt import build_aspirant_core_prompt, build_voice_confirmation, detect_interaction_mode
 from backend.app.core.container import EcosystemContainer
 from backend.app.domain.entities import ProductSource
 from backend.app.voice.diagnostics import (
@@ -320,12 +321,17 @@ async def process_voice_utterance(
     )
 
     greeting = SAME_LANGUAGE_GREETINGS.get(lang_code, "Understood")
+    confirmation = build_voice_confirmation(body.transcript, owner_title="Boss")
+    mode = detect_interaction_mode(body.transcript)
     if cmd.requires_authorization and not cmd.authorized:
         reply = f"{greeting} ({lang_name}): Sensitive action '{cmd.intent}' requires explicit authorization or verified owner identity."
     else:
         ai_res = await container.ai_router.generate(
             prompt=f"Reply strictly in {lang_name} ({lang_code}). User voice command: {body.transcript}",
-            system_instruction=f"Respond naturally in {lang_name}. Keep voice response warm, clear, and interruptible.",
+            system_instruction=(
+                f"{build_aspirant_core_prompt(owner_preferred_address='Boss', mode=mode)}\n\n"
+                f"Respond naturally in {lang_name}. Keep voice response warm, clear, and interruptible."
+            ),
             task_type="fast",
         )
         reply = f"{greeting} ({lang_name}): {ai_res.text}"
@@ -348,6 +354,7 @@ async def process_voice_utterance(
         "language_name": lang_name,
         "remembered_language": lang_code,
         "always_listening": body.always_listening,
+        "confirmation": confirmation,
         "confidence": signal.confidence,
         "far_field_detected": signal.far_field_detected,
         "noise_filtered_snr_db": signal.noise_filtered_snr_db,

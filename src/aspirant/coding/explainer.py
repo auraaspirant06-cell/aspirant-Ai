@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import Any
 
 from aspirant.coding.indexer import ProjectIndexer
+from aspirant.personality.system_prompt import build_aspirant_core_prompt
 from aspirant.providers.base import ChatMessage, ChatRequest
 from aspirant.providers.registry import ProviderRegistry
 from aspirant.security.permissions import Permission, PermissionManager
@@ -43,7 +44,7 @@ class CodeExplainer:
             resp = await self.providers.generate(
                 ChatRequest(
                     messages=[ChatMessage("user", f"{lang_prompt}\n\n```\n{code[:12_000]}\n```")],
-                    system_instruction="You are ASPIRANT AI Coding Expert.",
+                    system_instruction=build_aspirant_core_prompt(owner_preferred_address="Boss", mode="learning"),
                     temperature=0.2,
                 ),
                 provider_id=provider_id,
@@ -51,7 +52,6 @@ class CodeExplainer:
             )
             return {"explanation": resp.text, "language": language_mode, "provider": resp.provider}
         except Exception as exc:
-            # Deterministic offline static summary if no LLM provider is configured
             line_count = len(code.splitlines())
             return {
                 "explanation": (
@@ -60,6 +60,53 @@ class CodeExplainer:
                 ),
                 "language": language_mode,
                 "provider": "static-offline",
+            }
+
+    async def learn_concept(
+        self,
+        concept: str,
+        level: str = "beginner-to-intermediate",
+        provider_id: str = "auto",
+    ) -> dict[str, Any]:
+        """Learning Mode helper: starts simple, uses examples + real-world analogies + step-by-step."""
+        self.permissions.require(Permission.READ, f"Explain concept '{concept}'", category="coding")
+        allow_cloud = self.permissions.is_allowed(Permission.NETWORK)
+        topic = concept.strip() or "API Routing"
+        sys_inst = build_aspirant_core_prompt(owner_preferred_address="Boss", mode="learning")
+        try:
+            resp = await self.providers.generate(
+                ChatRequest(
+                    messages=[
+                        ChatMessage(
+                            "user",
+                            f"Teach '{topic}' at {level} level. Start simple, give a real-world analogy, "
+                            "include a concrete code example, and walk through it step-by-step.",
+                        )
+                    ],
+                    system_instruction=sys_inst,
+                    temperature=0.4,
+                ),
+                provider_id=provider_id,
+                allow_cloud=allow_cloud,
+            )
+            return {
+                "concept": topic,
+                "level": level,
+                "analogy": "Built directly inside AI explanation",
+                "explanation": resp.text,
+                "provider": resp.provider,
+            }
+        except Exception:
+            return {
+                "concept": topic,
+                "level": level,
+                "analogy": f"Think of {topic} like an organized post-office sorting desk handling each parcel cleanly.",
+                "explanation": (
+                    f"Step 1 (Simple): {topic} breaks work into small predictable pieces.\n"
+                    f"Step 2 (Example): Pass clear input -> validate -> transform -> return clean output.\n"
+                    f"Step 3 (Next): Practice with a minimal runnable file and unit test."
+                ),
+                "provider": "offline-mentor",
             }
 
     def generate_markdown_docs(self, project_root: str | Path) -> str:

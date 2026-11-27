@@ -5,7 +5,9 @@ from __future__ import annotations
 import re
 
 from backend.app.agents.base import AgentMessage, BaseAgent, SharedAgentContext
+from backend.app.agents.engineering import analyze_debug_error_log, generate_devops_deployment_plan
 from backend.app.ai.rag import RAGPipeline
+from backend.app.ai.system_prompt import build_aspirant_core_prompt, detect_interaction_mode
 from backend.app.domain.entities import AgentRole
 
 
@@ -57,15 +59,25 @@ class CodingAgent(BaseAgent):
     capability_summary = "Architecture, code generation, debugging, refactoring, and automated verification."
 
     async def execute(self, ctx: SharedAgentContext) -> AgentMessage:
+        mode = detect_interaction_mode(ctx.objective)
+        prompt = f"Technical task: {ctx.objective}\nPeer context:\n{ctx.prior_summary()}"
+        extra_artifacts: dict[str, object] = {"language": "python/typescript"}
+        if mode == "debugging":
+            dbg = analyze_debug_error_log(error_log=ctx.objective)
+            prompt += f"\nPre-analyzed root cause: {dbg['root_cause']}"
+            extra_artifacts["debug_analysis"] = dbg
+        elif mode == "devops":
+            plan = generate_devops_deployment_plan(app_name="aspirant-app", platform="Docker", execution_confirmed=False)
+            extra_artifacts["devops_plan"] = {"confirmation_required": True, "status": plan["status"]}
         res = await self._router.generate(
-            prompt=f"Technical task: {ctx.objective}\nPeer context:\n{ctx.prior_summary()}",
-            system_instruction="Produce clean modular architecture or code steps.",
+            prompt=prompt,
+            system_instruction=build_aspirant_core_prompt(owner_preferred_address="Boss", mode=mode if mode != "general" else "coding"),
             task_type="coding",
         )
         msg = AgentMessage(
             sender=self.role,
             content=f"Engineering plan & code guidance: {res.text}",
-            artifacts={"language": "python/typescript", "provider": res.provider},
+            artifacts={**extra_artifacts, "provider": res.provider},
         )
         ctx.post(self.role, msg.content, msg.artifacts)
         return msg

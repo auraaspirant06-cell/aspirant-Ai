@@ -9,6 +9,7 @@ from sqlalchemy import desc, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.app.ai.router import MultiModelAIRouter
+from backend.app.ai.system_prompt import build_aspirant_core_prompt, detect_interaction_mode
 from backend.app.domain.entities import MemoryLayer, ProductSource, new_id
 from backend.app.infrastructure.db.models import FeedbackEventModel
 from backend.app.memory.memory_service import MemoryService
@@ -29,7 +30,10 @@ class DeepReasoningEngine:
     """Provides structured multi-step planning, self-reflection, error correction, and feedback adaptation."""
 
     INTENT_MAP = {
-        "code_engineering": ("code", "bug", "test", "api", "fastapi", "refactor", "python", "typescript", "go"),
+        "code_engineering": ("code", "bug", "test", "api", "fastapi", "refactor", "python", "typescript", "go", "rust", "laravel"),
+        "devops_deployment": ("deploy", "docker", "kubernetes", "nginx", "cloudflare", "ubuntu", "aws", "azure", "oracle cloud"),
+        "debugging": ("traceback", "error:", "exception", "modulenotfounderror", "stack trace", "root cause"),
+        "learning": ("explain", "learn", "teach", "analogy", "step by step"),
         "research_synthesis": ("research", "compare", "analyze", "study", "paper", "deep"),
         "desktop_automation": ("open", "browser", "clipboard", "ocr", "windows", "automate", "workflow"),
         "productivity_planning": ("goal", "habit", "reminder", "calendar", "schedule", "roadmap", "plan"),
@@ -115,13 +119,14 @@ class DeepReasoningEngine:
             {"stage": "plan", "detail": "Constructed 4-stage execution roadmap"},
         ]
 
+        prompt_mode = detect_interaction_mode(objective)
         ai_reply = await self._router.generate(
             prompt=(
                 f"Objective: {objective}\nIntent: {intent}\nPlan: {plan}\n"
                 f"Prior Feedback Lessons: {lessons}\n"
                 f"Memory Snippets: {[m['content'][:100] for m in memory_bundle['semantic_memories'][:3]]}"
             ),
-            system_instruction="Produce a concise, verifiable multi-step reasoning conclusion.",
+            system_instruction=build_aspirant_core_prompt(owner_preferred_address="Boss", mode=prompt_mode),
             task_type="planning",
         )
         reflection, final_answer = self.self_reflect(objective, ai_reply.text, plan, lessons)

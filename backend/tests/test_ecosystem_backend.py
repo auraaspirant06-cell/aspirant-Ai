@@ -716,3 +716,61 @@ def test_microphone_detection_diagnostics_and_recovery(tmp_path: Path) -> None:
         # Confirm MIC NOT FOUND does NOT cause a 500 — always graceful
         # (this is the core requirement: never permanent error without diagnostics)
         assert status_res.status_code == 200  # already checked but make intent explicit
+
+
+def test_system_prompt_wake_words_project_generator_devops_and_debugging(tmp_path: Path) -> None:
+    """Verify Aspirant AI identity, wake words, 17-stack Project Generator, DevOps safety rule, Debug & Learning modes."""
+    app = create_app(_make_settings(tmp_path))
+    with TestClient(app) as client:
+        _, headers = _register_and_headers(client, email="boss@aspirant.ai")
+
+        for wake_text in (
+            "Hey Aspirant, create a FastAPI project.",
+            "Aspirant, explain Docker step by step.",
+            "Hello Aspirant deploy this app",
+        ):
+            wres = client.post("/api/v1/nova/wake-word", json={"transcript": wake_text})
+            assert wres.status_code == 200 and wres.json()["detected"] is True
+
+        vcmd = client.post(
+            "/api/v1/nova/voice/command",
+            headers=headers,
+            json={"transcript": "Hey Aspirant, create a FastAPI project."},
+        )
+        assert vcmd.status_code == 200 and "Boss" in vcmd.json()["confirmation"]
+
+        proj = client.post(
+            "/api/v1/agents/project/generate",
+            headers=headers,
+            json={"project_name": "Orders API", "stack": "Laravel"},
+        )
+        assert proj.status_code == 200
+        pdata = proj.json()
+        assert len(pdata["deliverables"]) == 8
+        assert len(pdata["supported_stacks"]) == 17
+
+        devops = client.post(
+            "/api/v1/agents/devops/plan",
+            headers=headers,
+            json={"app_name": "orders", "platform": "AWS", "domain": "api.orders.dev", "execution_confirmed": False},
+        )
+        assert devops.status_code == 200
+        ddata = devops.json()
+        assert len(ddata["supported_platforms"]) == 9
+        assert ddata["deployment_executed"] is False and ddata["confirmation_required"] is True
+
+        dbg = client.post(
+            "/api/v1/agents/debug",
+            headers=headers,
+            json={"error_log": "Traceback:\nModuleNotFoundError: No module named 'uvicorn'"},
+        )
+        assert dbg.status_code == 200
+        assert dbg.json()["analyzed_first"] is True and dbg.json()["prevention_methods"]
+
+        lrn = client.post(
+            "/api/v1/agents/learn",
+            headers=headers,
+            json={"concept": "Reverse Proxy"},
+        )
+        assert lrn.status_code == 200
+        assert lrn.json()["real_world_analogy"] and len(lrn.json()["step_by_step"]) >= 3
